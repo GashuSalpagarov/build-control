@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Роли пользователей
+enum Role {
+  SUPERADMIN    // Суперадмин - управление tenants
+  GOVERNMENT    // Правительство - read-only доступ
+  MINISTER      // Министр - полный доступ в рамках tenant
+  ACCOUNTANT    // Бухгалтер - платежи
+  TECHNADZOR    // Технадзор - план-график, проверки объёмов
+  INSPECTOR     // Проверяющий - ежедневные проверки ресурсов
+  CONTRACTOR    // Подрядчик - просмотр своих объектов, обращения
+}
+
+// Статус объекта
+enum ObjectStatus {
+  PLANNED       // Запланировано
+  IN_PROGRESS   // В работе
+  COMPLETED     // Завершён
+  SUSPENDED     // Приостановлен
+}
+
+// Статус обращения
+enum AppealStatus {
+  NEW           // Новое
+  IN_PROGRESS   // В работе
+  RESOLVED      // Решено
+  REJECTED      // Отклонено
+}
+
+// Тип обращения
+enum AppealType {
+  QUESTION      // Вопрос
+  PROBLEM       // Проблема
+  SUGGESTION    // Предложение
+}
+
+// Тенант (организация/республика)
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  contractors    Contractor[]
+  objects        Object[]
+  equipmentTypes EquipmentType[]
+}
+
+// Пользователь
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  role         Role
+  email        String   @unique
+  name         String
+  phone        String?
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant            Tenant?                @relation(fields: [tenantId], references: [id])
+  objectAssignments UserObjectAssignment[]
+  resourceChecks    ResourceCheck[]
+  volumeChecks      VolumeCheck[]
+  payments          Payment[]
+  appeals           Appeal[]
+  appealMessages    AppealMessage[]
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+// Привязка пользователя к объектам
+model UserObjectAssignment {
+  id       String @id @default(cuid())
+  userId   String
+  objectId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  object Object @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, objectId])
+  @@index([userId])
+  @@index([objectId])
+}
+
+// Подрядчик
+model Contractor {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  inn       String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  objects Object[]
+
+  @@index([tenantId])
+}
+
+// Объект строительства
+model Object {
+  id           String       @id @default(cuid())
+  tenantId     String
+  contractorId String?
+  name         String
+  address      String?
+  startDate    DateTime?
+  endDate      DateTime?
+  budget       Decimal?     @db.Decimal(15, 2)
+  status       ObjectStatus @default(PLANNED)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id])
+  contractor        Contractor?            @relation(fields: [contractorId], references: [id])
+  stages            Stage[]
+  userAssignments   UserObjectAssignment[]
+  appeals           Appeal[]
+
+  @@index([tenantId])
+  @@index([contractorId])
+  @@index([status])
+}
+
+// Этап работ
+model Stage {
+  id            String    @id @default(cuid())
+  objectId      String
+  name          String
+  startDate     DateTime?
+  endDate       DateTime?
+  budget        Decimal?  @db.Decimal(15, 2)
+  plannedPeople Int?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  object           Object             @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  plannedEquipment PlannedEquipment[]
+  resourceChecks   ResourceCheck[]
+  volumeChecks     VolumeCheck[]
+  payments         Payment[]
+  appeals          Appeal[]
+
+  @@index([objectId])
+  @@index([sortOrder])
+}
+
+// Справочник типов техники
+model EquipmentType {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  plannedEquipment PlannedEquipment[]
+  equipmentChecks  EquipmentCheck[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+// Плановая техника на этап
+model PlannedEquipment {
+  id              String @id @default(cuid())
+  stageId         String
+  equipmentTypeId String
+  quantity        Int
+
+  stage         Stage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+
+  @@unique([stageId, equipmentTypeId])
+  @@index([stageId])
+}
+
+// Ежедневная проверка ресурсов
+model ResourceCheck {
+  id           String   @id @default(cuid())
+  stageId      String
+  userId       String
+  date         DateTime @db.Date
+  actualPeople Int?
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stage           Stage            @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+  equipmentChecks EquipmentCheck[]
+  attachments     Attachment[]
+
+  @@unique([stageId, date])
+  @@index([stageId])
+  @@index([userId])
+  @@index([date])
+}
+
+// Факт техники в проверке
+model EquipmentCheck {
+  id              String @id @default(cuid())
+  resourceCheckId String
+  equipmentTypeId String
+  quantity        Int
+
+  resourceCheck ResourceCheck @relation(fields: [resourceCheckId], references: [id], onDelete: Cascade)
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+
+  @@unique([resourceCheckId, equipmentTypeId])
+  @@index([resourceCheckId])
+}
+
+// Проверка объёмов работ
+model VolumeCheck {
+  id        String   @id @default(cuid())
+  stageId   String
+  userId    String
+  date      DateTime @db.Date
+  percent   Int      // процент выполнения 0-100
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([stageId])
+  @@index([userId])
+  @@index([date])
+}
+
+// Платёж
+model Payment {
+  id        String   @id @default(cuid())
+  stageId   String
+  userId    String
+  date      DateTime @db.Date
+  amount    Decimal  @db.Decimal(15, 2)
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([stageId])
+  @@index([userId])
+  @@index([date])
+}
+
+// Обращение
+model Appeal {
+  id          String       @id @default(cuid())
+  objectId    String
+  stageId     String?
+  userId      String
+  type        AppealType
+  subject     String
+  description String?
+  status      AppealStatus @default(NEW)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  object   Object          @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  stage    Stage?          @relation(fields: [stageId], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+  messages AppealMessage[]
+  attachments Attachment[]
+
+  @@index([objectId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Сообщение в обращении
+model AppealMessage {
+  id        String   @id @default(cuid())
+  appealId  String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  appeal Appeal @relation(fields: [appealId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([appealId])
+}
+
+// Прикреплённые файлы
+model Attachment {
+  id              String  @id @default(cuid())
+  appealId        String?
+  resourceCheckId String?
+  path            String
+  filename        String
+  mimeType        String?
+  size            Int?
+  createdAt       DateTime @default(now())
+
+  appeal        Appeal?        @relation(fields: [appealId], references: [id], onDelete: Cascade)
+  resourceCheck ResourceCheck? @relation(fields: [resourceCheckId], references: [id], onDelete: Cascade)
+
+  @@index([appealId])
+  @@index([resourceCheckId])
+}
