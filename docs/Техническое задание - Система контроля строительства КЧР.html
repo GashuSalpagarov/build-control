@@ -1,0 +1,3160 @@
+<!DOCTYPE html>
+<!-- saved from url=(0072)file:///C:/Users/user/Downloads/Telegram%20Desktop/tz_documentation.html -->
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Техническое задание - Система контроля строительства КЧР</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #667eea;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 18px 30px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -3px;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .content {
+            padding: 40px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 28px;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 22px;
+            margin: 25px 0 15px 0;
+        }
+
+        h4 {
+            color: #555;
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        strong {
+            color: #764ba2;
+        }
+
+        .role-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .role-card h3 {
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+
+        .badge-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Техническое задание</h1>
+            <p>Система контроля строительных объектов для Министерства строительства КЧР</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, &#39;etap1&#39;)">Этап 1: Роли и права</button>
+            <button class="tab" onclick="openTab(event, &#39;etap2&#39;)">Этап 2: Внесение плана</button>
+            <button class="tab" onclick="openTab(event, &#39;etap3&#39;)">Этап 3: Контроль ресурсов</button>
+            <button class="tab" onclick="openTab(event, &#39;etap4&#39;)">Этап 4: Платежи</button>
+            <button class="tab" onclick="openTab(event, &#39;etap5&#39;)">Этап 5: Контроль объёмов</button>
+            <button class="tab" onclick="openTab(event, &#39;etap6&#39;)">Этап 6: Обращения</button>
+            <button class="tab" onclick="openTab(event, &#39;etap7&#39;)">Этап 7: Министр</button>
+            <button class="tab" onclick="openTab(event, &#39;etap8&#39;)">Этап 8: Правительство</button>
+        </div>
+
+        <div class="content">
+            <!-- ЭТАП 1 -->
+            <div id="etap1" class="tab-content active">
+                <h2>ЭТАП 1: РОЛИ И ПРАВА ДОСТУПА</h2>
+
+                <div class="role-card">
+                    <h3>1.1 Суперадмин (разработчики - мы)</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li>Создание республик в системе (КЧР, Адыгея, Дагестан и т.д.)</li>
+                        <li>Создание учётных записей министров для каждой республики</li>
+                        <li><strong>Имперсонация</strong> - возможность зайти в учётку любого министра и работать от его имени (для техподдержки)</li>
+                        <li>Полный доступ ко всем данным всех республик</li>
+                        <li>Управление подписками и тарифами</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит ВСЁ по всем республикам</li>
+                        <li>Может изменять любые данные</li>
+                        <li>Может логиниться как любой пользователь</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.2 Правительство (Губернатор и его аппарат)</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li><strong>Только просмотр</strong> (read-only) - никаких изменений</li>
+                        <li>Видят ВСЁ по всем объектам своей республики</li>
+                        <li>Могут выгружать отчёты</li>
+                        <li>Могут смотреть дашборды и аналитику</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видят все объекты республики</li>
+                        <li>Видят все финансы</li>
+                        <li>Видят все планы-графики</li>
+                        <li>Видят всех пользователей</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>❌ Не могут ничего изменять</li>
+                        <li>❌ Не могут создавать объекты/пользователей</li>
+                        <li>❌ Не могут отвечать на обращения</li>
+                        <li>Привязаны только к своей республике</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.3 Министр (главный администратор республики)</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li>✅ Создание объектов строительства (название, адрес, сроки, бюджет)</li>
+                        <li>✅ Создание и управление подрядчиками (ООО, ИП - ИНН, название, контакты)</li>
+                        <li>✅ Создание подведомственных организаций (технадзор)</li>
+                        <li>✅ Создание пользователей: проверяющих, бухгалтеров, технадзор</li>
+                        <li>✅ Привязка пользователей к объектам (один пользователь может быть на нескольких объектах)</li>
+                        <li>✅ Внесение и редактирование плана-графика работ (после утверждения на бумаге)</li>
+                        <li>✅ Утверждение плана-графика в системе</li>
+                        <li>✅ Просмотр всех обращений подрядчиков</li>
+                        <li>✅ Ответы на обращения подрядчиков</li>
+                        <li>✅ Полный доступ ко всем данным своей республики</li>
+                        <li>✅ Просмотр дашборда по всем объектам</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит все объекты республики</li>
+                        <li>Видит всех пользователей</li>
+                        <li>Видит всю финансовую информацию</li>
+                        <li>Видит все обращения</li>
+                        <li>Видит всю аналитику</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>Привязан только к своей республике</li>
+                        <li>Не может создавать другие республики</li>
+                        <li>Не может видеть данные других республик</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.4 Бухгалтер</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li>✅ Внесение данных о платежах подрядчикам через казначейство</li>
+                        <li>✅ Указание данных платежа:
+                            <ul>
+                                <li>Дата платежа</li>
+                                <li>Сумма в рублях</li>
+                                <li>За что платёж (этап работ или описание типа "аванс 30%")</li>
+                                <li>Номер платёжного поручения</li>
+                                <li>Комментарий (опционально)</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит <strong>только объекты</strong>, к которым привязан</li>
+                        <li>Видит финансовую информацию только по своим объектам</li>
+                        <li>Видит название этапов работ (чтобы выбрать за что платёж)</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>❌ НЕ видит план-график работ (детали)</li>
+                        <li>❌ НЕ видит фактические данные (люди, техника)</li>
+                        <li>❌ НЕ может редактировать объекты</li>
+                        <li>❌ НЕ может видеть другие объекты</li>
+                        <li>❌ НЕ видит обращения подрядчиков</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.5 Технадзор (Подведомственная организация)</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li>Получение бумажного плана-графика от подрядчика</li>
+                        <li>Участие в утверждении плана на бумаге совместно с министром</li>
+                        <li><strong>Внесение утверждённого плана-графика в систему</strong> через веб-форму</li>
+                        <li>Редактирование плана-графика (после утверждения изменений на бумаге министром)</li>
+                        <li><strong>Еженедельная проверка объёмов</strong> выполненных работ:
+                            <ul>
+                                <li>Запись физических объёмов (например: "выкопано 30 м³", "уложено 45 м³ бетона")</li>
+                                <li>Процент выполнения работы</li>
+                                <li>Комментарии к выполнению</li>
+                            </ul>
+                        </li>
+                        <li>Просмотр обращений подрядчиков по объектам</li>
+                        <li>Ответы на обращения подрядчиков (первичные)</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит <strong>ВСЕ объекты</strong> республики</li>
+                        <li>Видит планы-графики всех объектов</li>
+                        <li>Видит обращения подрядчиков</li>
+                        <li>Видит фактические данные (люди, техника) по всем объектам</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>Не может создавать объекты</li>
+                        <li>Не может создавать пользователей</li>
+                        <li><strong>НЕ видит финансовую информацию</strong> (платежи)</li>
+                        <li>Не может утверждать план (только министр)</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>Примечание по проверке объёмов:</strong>
+                        <ul>
+                            <li>Формат записи: по каждой работе указывается физический объём</li>
+                            <li>Примеры: "выкопано 30 м³", "уложено 45 м³ бетона", "смонтировано 120 м² кровли"</li>
+                            <li>Можно вводить процент выполнения вручную или система считает автоматически</li>
+                            <li>Обязательно указывать дату проверки и ФИО проверяющего</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.6 Проверяющий (ежедневный контроль ресурсов на объекте)</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li><strong>Ежедневная фиксация</strong> посещения объекта</li>
+                        <li>Запись <strong>количества рабочих</strong> на объекте в этот день</li>
+                        <li>Запись <strong>количества и видов техники</strong>:
+                            <ul>
+                                <li>Вид техники (например: Камаз, Экскаватор, Кран)</li>
+                                <li>Количество единиц</li>
+                            </ul>
+                        </li>
+                        <li>Добавление комментариев (опционально)</li>
+                        <li>Просмотр истории своих проверок</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит <strong>только объекты</strong>, к которым привязан</li>
+                        <li>Видит только интерфейс для ввода данных</li>
+                        <li><strong>НЕ видит плановые показатели</strong> (сколько должно быть людей/техники) - чтобы не подгонял данные под план</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>Не видит финансы</li>
+                        <li>Не видит план-график работ</li>
+                        <li>Не видит проверки объёмов (технадзор)</li>
+                        <li>Не видит обращения подрядчиков</li>
+                        <li>Только ввод фактических данных по своим объектам</li>
+                    </ul>
+
+                    <div class="warning-box">
+                        <strong>Особенность:</strong> Проверяющий видит ТОЛЬКО форму ввода, без графиков и аналитики. Это важно для объективности данных.
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>1.7 Подрядчик</h3>
+
+                    <h4>Функции:</h4>
+                    <ul>
+                        <li>Просмотр своих объектов</li>
+                        <li>Просмотр плана-графика своих объектов</li>
+                        <li>Просмотр фактического выполнения (успевает или отстаёт)</li>
+                        <li><strong>Создание обращений/вопросов</strong> к министру и технадзору:
+                            <ul>
+                                <li>Привязка к конкретному объекту и этапу работ</li>
+                                <li>Описание проблемы (например: "выкопали, наткнулись на трубу, работа остановлена")</li>
+                                <li>Прикрепление фото (опционально)</li>
+                            </ul>
+                        </li>
+                        <li>Просмотр ответов на свои обращения</li>
+                        <li>Просмотр истории переписки</li>
+                    </ul>
+
+                    <h4>Обращения подрядчика:</h4>
+                    <ul>
+                        <li>Статусы: <strong>Новое</strong> → <strong>На рассмотрении</strong> → <strong>Решено</strong></li>
+                        <li>Первично отвечает <strong>технадзор</strong>, но <strong>министр</strong> тоже видит и может ответить</li>
+                        <li>История переписки сохраняется</li>
+                        <li>Уведомления о новых ответах</li>
+                    </ul>
+
+                    <h4>Доступ:</h4>
+                    <ul>
+                        <li>Видит <strong>только объекты</strong>, где он является подрядчиком</li>
+                        <li>Видит план-график только своих объектов</li>
+                        <li>Видит фактическое выполнение (графики, проценты)</li>
+                        <li>Видит свои обращения и ответы</li>
+                    </ul>
+
+                    <h4>Ограничения:</h4>
+                    <ul>
+                        <li>Не может редактировать план</li>
+                        <li><strong>НЕ видит финансы</strong> (платежи)</li>
+                        <li>Не может видеть объекты других подрядчиков</li>
+                        <li>Не видит данные о ежедневных проверках (люди, техника)</li>
+                        <li>Не может создавать/редактировать пользователей</li>
+                    </ul>
+                </div>
+
+                <h2>Матрица прав доступа</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Функция</th>
+                            <th>Супер-админ</th>
+                            <th>Прави-тельство</th>
+                            <th>Министр</th>
+                            <th>Бухгалтер</th>
+                            <th>Технадзор</th>
+                            <th>Проверя-ющий</th>
+                            <th>Подрядчик</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Создание республик</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Имперсонация</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Создание объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Создание подрядчиков</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Создание пользователей</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ввод плана-графика</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Утверждение плана</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ввод платежей</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Проверка объёмов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ежедневные проверки ресурсов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Создание обращений</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ответы на обращения</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр всех объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр своих объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр финансов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅ свои</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр плана-графика</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅ свои</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр фактических данных</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅ свои</span></td>
+                        </tr>
+                        <tr>
+                            <td>Выгрузка отчётов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅ свои</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                            <td><span class="badge badge-yes">✅ свои</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Важные замечания</h2>
+                <div class="info-box">
+                    <ol>
+                        <li><strong>"Свои объекты"</strong> = объекты, к которым пользователь привязан явно</li>
+                        <li><strong>Иерархия ответов на обращения:</strong>
+                            <ul>
+                                <li>Подрядчик создаёт обращение</li>
+                                <li>Первым отвечает технадзор</li>
+                                <li>Министр может зайти и ответить в любой момент</li>
+                                <li>Оба видят всю историю переписки</li>
+                            </ul>
+                        </li>
+                        <li><strong>Технадзор видит ВСЁ кроме финансов</strong> - это важно для контроля</li>
+                        <li><strong>Проверяющий НЕ видит план</strong> - чтобы не подгонял факт под план</li>
+                        <li><strong>Бухгалтер НЕ видит план</strong> - только вносит платежи</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Остальные этапы будут добавлены позже -->
+            <div id="etap2" class="tab-content">
+                <h2>ЭТАП 2: ВНЕСЕНИЕ ПЛАНА-ГРАФИКА В СИСТЕМУ</h2>
+
+                <h3>2.1 Общая логика</h3>
+
+                <div class="warning-box">
+                    <strong>ВАЖНО:</strong>
+                    <ul>
+                        <li>План-график <strong>утверждается НА БУМАГЕ</strong> (подписи, печати) ДО внесения в систему</li>
+                        <li>Утверждение происходит <strong>вне системы</strong> (совещание, министр + технадзор + подрядчик)</li>
+                        <li>Система <strong>НЕ содержит</strong> workflow утверждения</li>
+                        <li>В систему вносится <strong>уже утверждённый</strong> план</li>
+                        <li>После внесения план сразу становится <strong>активным</strong> и начинается контроль</li>
+                    </ul>
+                </div>
+
+                <h3>2.2 Кто вносит план</h3>
+
+                <h4>Варианты:</h4>
+                <ol>
+                    <li><strong>Технадзор</strong> - вносит план через веб-форму (основной способ)</li>
+                    <li><strong>Министр</strong> - может внести план сам (резервный вариант)</li>
+                </ol>
+
+                <h4>НЕ вносят:</h4>
+                <ul>
+                    <li>Проверяющий - не имеет доступа к планам</li>
+                    <li>Бухгалтер - не видит план-график</li>
+                    <li>Подрядчик - только читает свой план</li>
+                </ul>
+
+                <h3>2.3 Процесс внесения плана (пошаговый мастер)</h3>
+
+                <div class="role-card">
+                    <h4>ШАГ 1: Общая информация об объекте</h4>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Поле</th>
+                                <th>Тип</th>
+                                <th>Обязательность</th>
+                                <th>Пример</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Название объекта</td>
+                                <td>Текст</td>
+                                <td>Обязательно</td>
+                                <td>Ремонт школы №5</td>
+                            </tr>
+                            <tr>
+                                <td>Адрес объекта</td>
+                                <td>Текст</td>
+                                <td>Обязательно</td>
+                                <td>г. Черкесск, ул. Ленина, 123</td>
+                            </tr>
+                            <tr>
+                                <td>Подрядчик</td>
+                                <td>Выбор из списка ИЛИ создание нового</td>
+                                <td>Обязательно</td>
+                                <td>ООО "СтройКомплект"</td>
+                            </tr>
+                            <tr>
+                                <td>Дата начала</td>
+                                <td>Дата</td>
+                                <td>Обязательно</td>
+                                <td>01.01.2025</td>
+                            </tr>
+                            <tr>
+                                <td>Дата окончания</td>
+                                <td>Дата</td>
+                                <td>Обязательно</td>
+                                <td>30.06.2025</td>
+                            </tr>
+                            <tr>
+                                <td>Общий бюджет проекта</td>
+                                <td>Число (рубли)</td>
+                                <td>Обязательно</td>
+                                <td>35 000 000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="info-box">
+                        <strong>Создание нового подрядчика (если нет в списке):</strong>
+                        <ul>
+                            <li>Полное название (ООО, ИП)</li>
+                            <li>ИНН</li>
+                            <li>Телефон</li>
+                            <li>Email</li>
+                            <li>ФИО ответственного лица</li>
+                        </ul>
+                    </div>
+
+                    <p><strong>Кнопки:</strong></p>
+                    <ul>
+                        <li>[Далее] - переход к Шагу 2</li>
+                        <li>[Отмена] - выход без сохранения</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>ШАГ 2: Добавление этапов работ</h4>
+
+                    <p><strong>Логика:</strong></p>
+                    <ul>
+                        <li>Этапы добавляются <strong>по одному</strong></li>
+                        <li>После добавления этапа можно:
+                            <ul>
+                                <li>[Сохранить и добавить ещё этап] - продолжить заполнение</li>
+                                <li>[Завершить] - закончить внесение плана</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>Поля для КАЖДОГО этапа:</strong></p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Поле</th>
+                                <th>Тип</th>
+                                <th>Обязательность</th>
+                                <th>Пример</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Название этапа</td>
+                                <td>Текст</td>
+                                <td>Обязательно</td>
+                                <td>Подготовительные работы</td>
+                            </tr>
+                            <tr>
+                                <td>Дата начала этапа</td>
+                                <td>Дата</td>
+                                <td>Обязательно</td>
+                                <td>01.01.2025</td>
+                            </tr>
+                            <tr>
+                                <td>Дата окончания этапа</td>
+                                <td>Дата</td>
+                                <td>Обязательно</td>
+                                <td>10.01.2025</td>
+                            </tr>
+                            <tr>
+                                <td>Бюджет этапа</td>
+                                <td>Число (рубли)</td>
+                                <td>Обязательно</td>
+                                <td>450 000</td>
+                            </tr>
+                            <tr>
+                                <td>Количество рабочих (чел/день)</td>
+                                <td>Число</td>
+                                <td>Обязательно</td>
+                                <td>8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>Техника (можно добавлять несколько видов):</strong></p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Вид техники</th>
+                                <th>Количество (шт/день)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Камаз</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Экскаватор</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Бетономешалка</td>
+                                <td>2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="info-box">
+                        <strong>Добавление техники:</strong>
+                        <ul>
+                            <li>[+ Добавить технику] - открывается выпадающий список видов техники</li>
+                            <li>Выбрать вид → указать количество (шт/день)</li>
+                            <li>[Удалить] - удалить строку с техникой</li>
+                        </ul>
+                    </div>
+
+                    <p><strong>Кнопки:</strong></p>
+                    <ul>
+                        <li>[Сохранить и добавить ещё этап] - сохраняет текущий этап и очищает форму для нового</li>
+                        <li>[Завершить] - сохраняет этап и закрывает мастер (план становится активным)</li>
+                        <li>[Назад] - возврат к Шагу 1</li>
+                        <li>[Отмена] - выход без сохранения</li>
+                    </ul>
+                </div>
+
+                <h3>2.4 ВАЖНЫЕ ОСОБЕННОСТИ</h3>
+
+                <div class="warning-box">
+                    <h4>2.4.1 Ресурсы "в день"</h4>
+
+                    <p><strong>КРИТИЧЕСКИ ВАЖНО:</strong></p>
+                    <ul>
+                        <li>Все количества ресурсов (люди, техника) указываются <strong>НА день</strong></li>
+                        <li>Это значит: "8 человек" = "каждый день на объекте должно быть 8 человек"</li>
+                        <li>"2 бетономешалки" = "каждый день должно быть 2 бетономешалки"</li>
+                        <li>Даже если в бумажном плане написано просто "8 человек, 2 экскаватора" - <strong>это ВСЕГДА означает "в день"</strong></li>
+                    </ul>
+
+                    <p><strong>Примеры:</strong></p>
+                    <ul>
+                        <li>План: "Подготовительные работы, 01.01-10.01, 8 человек, 1 Камаз"</li>
+                        <li>Значение: С 1 по 10 января КАЖДЫЙ ДЕНЬ должно быть 8 человек и 1 Камаз</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>2.4.2 Проверка корректности дат</h4>
+
+                    <p><strong>Автоматические валидации:</strong></p>
+                    <ol>
+                        <li>Дата окончания проекта ≥ дата начала проекта</li>
+                        <li>Дата начала этапа ≥ дата начала проекта</li>
+                        <li>Дата окончания этапа ≤ дата окончания проекта</li>
+                        <li>Дата окончания этапа ≥ дата начала этапа</li>
+                        <li><strong>Этапы МОГУТ пересекаться по датам</strong> - это нормально для строительства (например: этап "Вырыть котлован" 01.01-10.01 и этап "Очистка территории" 04.01-08.01 могут идти параллельно)</li>
+                    </ol>
+
+                    <p><strong>Показать предупреждения:</strong></p>
+                    <ul>
+                        <li>Если сумма бюджетов этапов &gt; общего бюджета</li>
+                        <li>Если сумма бюджетов этапов &lt; общего бюджета (возможно, забыли этап)</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>2.4.3 Справочник техники</h4>
+
+                    <p><strong>В системе должен быть заранее созданный справочник видов техники:</strong></p>
+                    <ul>
+                        <li>Камаз</li>
+                        <li>Экскаватор</li>
+                        <li>Бетономешалка</li>
+                        <li>Автокран</li>
+                        <li>Погрузчик</li>
+                        <li>Бульдозер</li>
+                        <li>Виброплита</li>
+                        <li>Компрессор</li>
+                        <li>Автобетоносмеситель</li>
+                        <li>Автовышка</li>
+                        <li>Самосвал</li>
+                        <li>Грузовик</li>
+                        <li>[+ Добавить свой вид] - можно добавить произвольное название</li>
+                    </ul>
+
+                    <p><strong>Возможность расширения:</strong></p>
+                    <ul>
+                        <li>Суперадмин и Министр могут добавлять новые виды техники в справочник</li>
+                        <li>При вводе нового вида техника автоматически добавляется в общий справочник</li>
+                    </ul>
+                </div>
+
+                <h3>2.6 Что происходит после внесения плана</h3>
+
+                <div class="success-box">
+                    <p><strong>После нажатия [Завершить]:</strong></p>
+
+                    <ol>
+                        <li>План <strong>сохраняется</strong> в базу данных</li>
+                        <li>План автоматически получает статус <strong>"Активный"</strong> (не "На утверждении"!)</li>
+                        <li>Объект появляется в общем списке объектов</li>
+                        <li>Подрядчик <strong>автоматически получает доступ</strong> к своему объекту</li>
+                        <li>Система начинает <strong>отсчитывать дни</strong> и показывать текущий статус</li>
+                        <li>Проверяющий может начинать <strong>ежедневные проверки</strong> ресурсов</li>
+                        <li>Технадзор может начинать <strong>еженедельные проверки объёмов</strong></li>
+                        <li>Бухгалтер видит объект и может <strong>вносить платежи</strong></li>
+                    </ol>
+
+                    <p><strong>Уведомления (опционально):</strong></p>
+                    <ul>
+                        <li>Подрядчику на email: "Объект добавлен, вы можете войти в систему"</li>
+                        <li>Проверяющим: "Новый объект для контроля"</li>
+                    </ul>
+                </div>
+
+                <h3>2.7 Редактирование плана</h3>
+
+                <h4>Когда может понадобиться:</h4>
+                <ul>
+                    <li>Ошибка при вводе данных</li>
+                    <li>Изменение сроков (согласованное с министром)</li>
+                    <li>Добавление/удаление этапов</li>
+                </ul>
+
+                <h4>Кто может редактировать:</h4>
+                <ul>
+                    <li><strong>Министр</strong> - может редактировать всё</li>
+                    <li><strong>Технадзор</strong> - может редактировать план-график (только после утверждения изменений министром на бумаге)</li>
+                    <li><strong>Остальные</strong> - не могут</li>
+                </ul>
+
+                <h4>Логика редактирования:</h4>
+                <ol>
+                    <li>Открыть объект</li>
+                    <li>Кнопка [Редактировать план]</li>
+                    <li>Открывается тот же мастер, но с уже заполненными данными</li>
+                    <li>Можно изменить любые поля</li>
+                    <li>Можно добавить новые этапы</li>
+                    <li>Можно удалить этапы (если по ним ещё нет фактических данных)</li>
+                    <li>[Сохранить изменения]</li>
+                </ol>
+
+                <div class="warning-box">
+                    <strong>ВАЖНО:</strong>
+                    <ul>
+                        <li>Если по этапу уже есть проверки (объёмы, ресурсы) - <strong>нельзя удалить</strong> этот этап</li>
+                        <li>Можно изменить название, даты, бюджет - но нельзя удалить</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="etap3" class="tab-content">
+                <h2>ЭТАП 3: ЕЖЕДНЕВНЫЙ КОНТРОЛЬ РЕСУРСОВ (ПРОВЕРЯЮЩИЙ)</h2>
+
+                <h3>3.1 Описание роли "Проверяющий"</h3>
+
+                <div class="info-box">
+                    <h4>Кто это:</h4>
+                    <ul>
+                        <li>Человек, который физически приходит на строительный объект каждый рабочий день</li>
+                        <li>Считает количество рабочих на объекте</li>
+                        <li>Фиксирует присутствующую технику и её количество</li>
+                        <li>Отправляет данные в систему через простую форму</li>
+                    </ul>
+
+                    <h4>Это НЕ:</h4>
+                    <ul>
+                        <li>НЕ технадзор (технадзор проверяет объёмы работ еженедельно)</li>
+                        <li>НЕ инспектор качества</li>
+                        <li>НЕ принимает решений и не оценивает качество</li>
+                    </ul>
+
+                    <h4>Суть роли:</h4>
+                    <ul>
+                        <li>Простой "счетчик" людей и техники</li>
+                        <li>Фиксирует ФАКТ присутствия ресурсов на объекте</li>
+                        <li>Объективный наблюдатель</li>
+                    </ul>
+                </div>
+
+                <h4>Кем может быть:</h4>
+                <ul>
+                    <li>Сотрудник министерства</li>
+                    <li>Представитель подведомственной организации</li>
+                    <li>Специально нанятый человек для ежедневного мониторинга</li>
+                </ul>
+
+                <div class="success-box">
+                    <strong>Важная особенность:</strong>
+                    <ul>
+                        <li>Может быть <strong>несколько проверяющих</strong> на одном объекте (работают посменно или дублируют друг друга)</li>
+                        <li>Каждый проверяющий привязывается к <strong>нескольким объектам</strong> (маршрут объезда)</li>
+                    </ul>
+                </div>
+
+                <h3>3.3 Форма ежедневной проверки</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Обязательность</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Дата</td>
+                            <td>Автоматически</td>
+                            <td>-</td>
+                            <td>Текущая дата (только чтение)</td>
+                        </tr>
+                        <tr>
+                            <td>Количество рабочих</td>
+                            <td>Число</td>
+                            <td>Обязательно</td>
+                            <td>Сколько человек на объекте</td>
+                        </tr>
+                        <tr>
+                            <td>Техника</td>
+                            <td>Список (название + количество)</td>
+                            <td>Необязательно</td>
+                            <td>Какая техника и сколько штук</td>
+                        </tr>
+                        <tr>
+                            <td>Комментарий</td>
+                            <td>Текст (многострочный)</td>
+                            <td>Необязательно</td>
+                            <td>Пояснения (погода, причины отклонений)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>3.4 Логика работы формы</h3>
+
+                <div class="role-card">
+                    <h4>3.4.1 Список техники</h4>
+
+                    <p><strong>Откуда берется список техники:</strong></p>
+                    <ul>
+                        <li>Система подтягивает <strong>виды техники</strong> из плана-графика этого объекта (на текущий период)</li>
+                        <li>Показывает проверяющему список техники, которую нужно отметить</li>
+                        <li><strong>ВАЖНО:</strong> Проверяющий видит НАЗВАНИЯ техники (Камаз, Экскаватор), но НЕ видит плановое КОЛИЧЕСТВО</li>
+                        <li>Изначально все поля количества пустые (или = 0)</li>
+                        <li>Проверяющий вводит фактическое количество каждого вида техники</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>Пример:</strong><br>
+                        По плану на сегодня должно быть: 2 Камаза, 1 Экскаватор, 2 Бетономешалки<br><br>
+                        <strong>Проверяющий видит форму:</strong><br>
+                        □ Камаз: [___] шт.<br>
+                        □ Экскаватор: [___] шт.<br>
+                        □ Бетономешалка: [___] шт.<br><br>
+                        <strong>НЕ видит:</strong> что должно быть 2, 1, 2
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>Важно:</strong>
+                        <ul>
+                            <li>Проверяющий может отмечать ТОЛЬКО ту технику, которая указана в плане на текущий период</li>
+                            <li><strong>НЕЛЬЗЯ</strong> добавить технику, которой нет в списке</li>
+                            <li>Если на объекте есть техника не из плана - проверяющий пишет об этом в комментарии</li>
+                            <li>Если запланированной техники нет на объекте - ставим "0"</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h4>3.4.2 Количество рабочих</h4>
+
+                    <p><strong>Обязательное поле:</strong></p>
+                    <ul>
+                        <li>Нельзя отправить форму без указания количества рабочих</li>
+                        <li>Можно указать "0" (если объект пустой - выходной, дождь и т.д.)</li>
+                        <li>При "0" желательно написать комментарий (но не обязательно)</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>3.4.3 Комментарий</h4>
+
+                    <p><strong>Необязательное поле:</strong></p>
+                    <ul>
+                        <li>Проверяющий сам решает, нужен ли комментарий</li>
+                        <li>Рекомендуется писать при:
+                            <ul>
+                                <li>Погодных условиях (дождь, снег, мороз)</li>
+                                <li>Отсутствии людей/техники</li>
+                                <li>Любых необычных ситуациях</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>Примеры комментариев:</strong></p>
+                    <ul>
+                        <li>"Сильный дождь, работы не ведутся"</li>
+                        <li>"Экскаватор на ремонте, ожидается завтра"</li>
+                        <li>"Выходной день"</li>
+                        <li>"Работа идет в обычном режиме"</li>
+                        <li>Пустое поле (если все стандартно)</li>
+                    </ul>
+                </div>
+
+                <h3>3.5 Редактирование сегодняшней проверки</h3>
+
+                <div class="info-box">
+                    <p><strong>Логика:</strong></p>
+                    <ul>
+                        <li>Если проверяющий уже отметился сегодня, он может <strong>отредактировать</strong> свою проверку</li>
+                        <li>Кнопка [Редактировать] открывает ту же форму, но с уже заполненными данными</li>
+                        <li>Можно изменить любые поля (количество людей, техника, комментарий)</li>
+                        <li>После сохранения показывается уведомление: "Проверка обновлена"</li>
+                    </ul>
+
+                    <p><strong>Ограничение:</strong></p>
+                    <ul>
+                        <li>Редактировать можно <strong>только сегодняшнюю</strong> проверку</li>
+                        <li>Проверки прошлых дней редактировать <strong>нельзя</strong> (только просмотр в истории)</li>
+                    </ul>
+
+                    <p><strong>Причина:</strong></p>
+                    <ul>
+                        <li>Вдруг проверяющий не заметил человека или единицу техники</li>
+                        <li>Вдруг ошибся при вводе цифры</li>
+                        <li>Вдруг забыл написать важный комментарий</li>
+                    </ul>
+                </div>
+
+                <h3>3.7 Уведомления для проверяющего</h3>
+
+                <div class="role-card">
+                    <h4>3.7.1 Утреннее напоминание</h4>
+
+                    <p><strong>Время:</strong> 09:00 каждый рабочий день</p>
+
+                    <p><strong>Текст уведомления:</strong></p>
+                    <div class="success-box">
+                        Доброе утро!<br>
+                        Не забудьте посетить объекты и отметить проверку:<br>
+                        • Ремонт школы №5<br>
+                        • Строительство моста<br>
+                        • Реконструкция площади
+                    </div>
+
+                    <p><strong>Каналы:</strong></p>
+                    <ul>
+                        <li>Push-уведомление в мобильном приложении (если есть)</li>
+                        <li>SMS (опционально)</li>
+                        <li>Email (опционально)</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>3.7.2 Вечернее предупреждение</h4>
+
+                    <p><strong>Время:</strong> 18:00 (если проверка не отмечена)</p>
+
+                    <p><strong>Текст уведомления:</strong></p>
+                    <div class="warning-box">
+                        Внимание!<br>
+                        Вы не отметили проверку по объектам:<br>
+                        • Ремонт школы №5<br>
+                        • Реконструкция площади<br><br>
+                        Пожалуйста, внесите данные в систему.
+                    </div>
+
+                    <p><strong>Каналы:</strong></p>
+                    <ul>
+                        <li>Push-уведомление</li>
+                        <li>SMS (опционально)</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>3.7.3 Подтверждение отправки</h4>
+
+                    <p><strong>Время:</strong> Сразу после отправки проверки</p>
+
+                    <p><strong>Текст уведомления:</strong></p>
+                    <div class="success-box">
+                        Проверка принята<br>
+                        Объект: Ремонт школы №5<br>
+                        Дата: 20.01.2025<br>
+                        Рабочих: 8 чел.<br>
+                        Техника: Камаз: 2, Экскаватор: 1
+                    </div>
+
+                    <p><strong>Канал:</strong></p>
+                    <ul>
+                        <li>Всплывающее сообщение в интерфейсе</li>
+                    </ul>
+                </div>
+
+                <h3>3.8 Что проверяющий НЕ видит</h3>
+
+                <div class="warning-box">
+                    <h4>Важные ограничения:</h4>
+
+                    <p><strong>НЕ видит плановые показатели:</strong></p>
+                    <ul>
+                        <li>Сколько людей/техники ДОЛЖНО быть по плану</li>
+                        <li>Это сделано намеренно, чтобы проверяющий не подгонял данные под план</li>
+                    </ul>
+
+                    <p><strong>НЕ видит финансовую информацию:</strong></p>
+                    <ul>
+                        <li>Бюджет объекта</li>
+                        <li>Платежи подрядчику</li>
+                        <li>Стоимость этапов</li>
+                    </ul>
+
+                    <p><strong>НЕ видит график работ (Gantt):</strong></p>
+                    <ul>
+                        <li>Календарный план</li>
+                        <li>Этапы работ</li>
+                        <li>Сроки выполнения</li>
+                    </ul>
+
+                    <p><strong>НЕ видит проверки объёмов (технадзор):</strong></p>
+                    <ul>
+                        <li>Сколько м³ выкопано</li>
+                        <li>Процент выполнения работ</li>
+                        <li>Отклонения по объёмам</li>
+                    </ul>
+
+                    <p><strong>НЕ видит проверки других проверяющих:</strong></p>
+                    <ul>
+                        <li>Только свои проверки</li>
+                        <li>Это важно для независимости данных</li>
+                    </ul>
+
+                    <p><strong>НЕ видит аналитику и дашборды:</strong></p>
+                    <ul>
+                        <li>Графики прогресса</li>
+                        <li>Статистику по объекту</li>
+                        <li>Сравнения план/факт</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Что видит:</h4>
+                    <ul>
+                        <li>Только список своих объектов</li>
+                        <li>Форму для ввода данных</li>
+                        <li>Историю своих проверок</li>
+                        <li>Уведомления</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Почему такие ограничения:</h4>
+                    <ul>
+                        <li>Обеспечить объективность данных</li>
+                        <li>Избежать подгонки факта под план</li>
+                        <li>Упростить интерфейс до минимума</li>
+                        <li>Сфокусировать проверяющего только на фиксации фактов</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="etap4" class="tab-content">
+                <h2>ЭТАП 4: ВНЕСЕНИЕ ПЛАТЕЖЕЙ (БУХГАЛТЕР)</h2>
+
+                <h3>4.1 Описание роли "Бухгалтер"</h3>
+
+                <div class="info-box">
+                    <h4>Кто это:</h4>
+                    <ul>
+                        <li>Сотрудник бухгалтерии министерства</li>
+                        <li>Отвечает за учёт платежей подрядчикам через казначейство</li>
+                        <li>Фиксирует факт перечисления денег</li>
+                    </ul>
+
+                    <h4>Основная функция:</h4>
+                    <ul>
+                        <li>Внесение информации о платежах подрядчикам в систему</li>
+                        <li>Привязка платежа к конкретному этапу работ</li>
+                        <li>Контроль сколько уже оплачено по каждому этапу</li>
+                    </ul>
+
+                    <h4>Это НЕ:</h4>
+                    <ul>
+                        <li>НЕ принимает решения о платежах (решения принимаются вне системы)</li>
+                        <li>НЕ утверждает платежи (утверждение через казначейство)</li>
+                        <li>НЕ оценивает качество работ</li>
+                        <li>НЕ контролирует ход строительства</li>
+                    </ul>
+
+                    <h4>Суть роли:</h4>
+                    <ul>
+                        <li>Простая фиксация платежей в системе</li>
+                        <li>Учёт финансовых операций по объектам</li>
+                        <li>Прозрачность расходования бюджета</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <strong>Важная особенность:</strong>
+                    <ul>
+                        <li>Бухгалтер <strong>привязан к нескольким объектам</strong> (ведёт несколько строек)</li>
+                        <li>Видит <strong>только финансовую информацию</strong>, не видит план-график и фактическое выполнение</li>
+                        <li><strong>НЕ может редактировать</strong> платежи после добавления (только создавать новые)</li>
+                    </ul>
+                </div>
+
+                <h3>4.4 Форма добавления платежа</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Обязательность</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Этап работ</td>
+                            <td>Выбор из списка</td>
+                            <td>Обязательно</td>
+                            <td>Выбор этапа из плана-графика</td>
+                        </tr>
+                        <tr>
+                            <td>Дата платежа</td>
+                            <td>Дата</td>
+                            <td>Обязательно</td>
+                            <td>Дата перечисления средств</td>
+                        </tr>
+                        <tr>
+                            <td>Сумма платежа</td>
+                            <td>Число (рубли)</td>
+                            <td>Обязательно</td>
+                            <td>Сумма в рублях</td>
+                        </tr>
+                        <tr>
+                            <td>Номер п/п</td>
+                            <td>Текст</td>
+                            <td>Необязательно</td>
+                            <td>Номер платёжного поручения</td>
+                        </tr>
+                        <tr>
+                            <td>Комментарий</td>
+                            <td>Текст</td>
+                            <td>Необязательно</td>
+                            <td>Пояснение к платежу</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>4.5 Логика работы формы</h3>
+
+                <div class="role-card">
+                    <h4>4.5.1 Выбор этапа работ</h4>
+
+                    <p><strong>Откуда берется список этапов:</strong></p>
+                    <ul>
+                        <li>Система показывает все этапы из плана-графика этого объекта</li>
+                        <li>Этапы отображаются в хронологическом порядке</li>
+                        <li>Для каждого этапа показан бюджет</li>
+                    </ul>
+
+                    <p><strong>После выбора этапа автоматически появляется информационный блок:</strong></p>
+                    <ul>
+                        <li>Бюджет этапа</li>
+                        <li>Уже оплачено (сумма и процент)</li>
+                        <li>Осталось оплатить</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>Пример:</strong><br>
+                        Этап: Фундаментные работы<br>
+                        Бюджет: 1 800 000 ₽<br>
+                        Оплачено: 900 000 ₽ (50%)<br>
+                        Осталось: 900 000 ₽
+                    </div>
+
+                    <p><strong>Важно:</strong></p>
+                    <ul>
+                        <li>Можно оплатить <strong>больше</strong> 100% бюджета этапа (дополнительные работы)</li>
+                        <li>Можно оплатить <strong>меньше</strong> 100% (частичная оплата)</li>
+                        <li>Система НЕ блокирует переплату, только предупреждает</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.5.2 Дата платежа</h4>
+
+                    <p><strong>Обязательное поле:</strong></p>
+                    <ul>
+                        <li>Дата фактического перечисления денег</li>
+                        <li>Можно выбрать любую дату (прошлую, текущую, будущую)</li>
+                        <li>По умолчанию = сегодняшняя дата</li>
+                    </ul>
+
+                    <p><strong>Примечание:</strong></p>
+                    <ul>
+                        <li>Если платёж был вчера, а бухгалтер вносит сегодня - выбирает вчерашнюю дату</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.5.3 Сумма платежа</h4>
+
+                    <p><strong>Обязательное поле:</strong></p>
+                    <ul>
+                        <li>Сумма в рублях</li>
+                        <li>Целое число (без копеек)</li>
+                        <li>Минимум: 1 рубль</li>
+                        <li>Максимум: не ограничен</li>
+                    </ul>
+
+                    <div class="warning-box">
+                        <strong>Предупреждение при переплате:</strong><br><br>
+                        Если сумма платежа больше остатка по этапу:<br><br>
+                        <em>Внимание!<br>
+                        Сумма платежа (1 500 000 ₽) больше остатка по этапу (900 000 ₽).<br>
+                        Вы уверены, что хотите продолжить?<br>
+                        [Да, продолжить]  [Отмена]</em>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.5.4 Номер платёжного поручения</h4>
+
+                    <p><strong>Необязательное поле:</strong></p>
+                    <ul>
+                        <li>Свободный текст</li>
+                        <li>Обычно вводят: "№12345 от 20.01.2025"</li>
+                        <li>Можно оставить пустым</li>
+                    </ul>
+
+                    <p><strong>Зачем:</strong></p>
+                    <ul>
+                        <li>Для связи с бухгалтерскими документами</li>
+                        <li>Для аудита и проверок</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.5.5 Комментарий</h4>
+
+                    <p><strong>Необязательное поле:</strong></p>
+                    <ul>
+                        <li>Свободный текст</li>
+                        <li>Пояснение назначения платежа</li>
+                    </ul>
+
+                    <p><strong>Примеры:</strong></p>
+                    <ul>
+                        <li>"Аванс 50%"</li>
+                        <li>"Финальный платёж"</li>
+                        <li>"Доплата за дополнительные работы"</li>
+                        <li>"Оплата по акту выполненных работ №5"</li>
+                    </ul>
+                </div>
+
+                <h3>4.6 После добавления платежа</h3>
+
+                <div class="success-box">
+                    <p><strong>Что происходит:</strong></p>
+
+                    <ol>
+                        <li>Платёж <strong>сохраняется</strong> в базу данных</li>
+                        <li>Автоматически записывается <strong>ФИО бухгалтера</strong> (из учётной записи)</li>
+                        <li>Пересчитываются проценты оплаты по этапу</li>
+                        <li>Пересчитывается общая сумма оплаты по объекту</li>
+                        <li>Платёж появляется в истории платежей этапа</li>
+                        <li>Возврат к детальной информации объекта</li>
+                    </ol>
+
+                    <p><strong>Уведомление:</strong></p>
+                    <div class="info-box">
+                        Платёж добавлен<br>
+                        Этап: Фундаментные работы<br>
+                        Сумма: 900 000 ₽<br>
+                        Дата: 20.01.2025
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>ВАЖНО:</strong></p>
+                    <ul>
+                        <li>Платёж <strong>НЕ редактируется</strong> после добавления</li>
+                        <li>Платёж <strong>НЕ удаляется</strong> после добавления</li>
+                        <li>Если ошибка - нужно создать корректирующий платёж (с минусом или плюсом)</li>
+                    </ul>
+
+                    <p><strong>Почему нельзя редактировать:</strong></p>
+                    <ul>
+                        <li>Финансовая дисциплина</li>
+                        <li>Аудит и прозрачность</li>
+                        <li>Все операции должны оставаться в истории</li>
+                        <li>Если ошибка - создаётся обратная операция или корректирующая запись</li>
+                    </ul>
+                </div>
+
+                <h3>4.7 Что бухгалтер НЕ видит</h3>
+
+                <div class="warning-box">
+                    <h4>Важные ограничения:</h4>
+
+                    <p><strong>НЕ видит план-график работ:</strong></p>
+                    <ul>
+                        <li>Даты начала/окончания этапов</li>
+                        <li>Запланированные ресурсы (люди, техника)</li>
+                        <li>Календарный план (Gantt)</li>
+                    </ul>
+
+                    <p><strong>НЕ видит фактическое выполнение:</strong></p>
+                    <ul>
+                        <li>Ежедневные проверки ресурсов (проверяющий)</li>
+                        <li>Проверки объёмов работ (технадзор)</li>
+                        <li>Процент физического выполнения работ</li>
+                    </ul>
+
+                    <p><strong>НЕ видит аналитику план/факт:</strong></p>
+                    <ul>
+                        <li>Графики прогресса</li>
+                        <li>Отклонения по ресурсам</li>
+                        <li>Статистику выполнения</li>
+                    </ul>
+
+                    <p><strong>НЕ видит обращения подрядчика:</strong></p>
+                    <ul>
+                        <li>Проблемы на объекте</li>
+                        <li>Переписку с министром/технадзором</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Что видит:</h4>
+                    <ul>
+                        <li>Список своих объектов</li>
+                        <li>Названия этапов работ</li>
+                        <li>Бюджеты этапов и объектов</li>
+                        <li>Историю платежей</li>
+                        <li>Процент оплаты по каждому этапу</li>
+                        <li>Общую финансовую сводку</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Почему такие ограничения:</h4>
+                    <ul>
+                        <li>Разделение обязанностей (финансы отдельно от контроля выполнения)</li>
+                        <li>Упрощение интерфейса</li>
+                        <li>Фокус только на финансовом учёте</li>
+                        <li>Безопасность данных</li>
+                    </ul>
+                </div>
+
+                <h3>4.9 Особые случаи</h3>
+
+                <div class="role-card">
+                    <h4>4.9.1 Переплата по этапу</h4>
+
+                    <p><strong>Ситуация:</strong></p>
+                    <ul>
+                        <li>Бюджет этапа: 1 800 000 ₽</li>
+                        <li>Уже оплачено: 1 800 000 ₽ (100%)</li>
+                        <li>Бухгалтер хочет добавить ещё платёж: 200 000 ₽</li>
+                    </ul>
+
+                    <p><strong>Поведение системы:</strong></p>
+                    <ul>
+                        <li>Показать предупреждение: "Сумма превысит бюджет этапа на 200 000 ₽"</li>
+                        <li>Разрешить добавить платёж (не блокировать)</li>
+                        <li>После добавления показать: "Оплачено: 2 000 000 ₽ (111%)"</li>
+                    </ul>
+
+                    <p><strong>Причина переплаты:</strong></p>
+                    <ul>
+                        <li>Дополнительные работы</li>
+                        <li>Изменение объёма работ</li>
+                        <li>Ошибка в планировании</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.9.2 Несколько бухгалтеров на одном объекте</h4>
+
+                    <p><strong>Ситуация:</strong></p>
+                    <ul>
+                        <li>На объекте работают 2 бухгалтера (например, главный + помощник)</li>
+                        <li>Оба привязаны к одному объекту</li>
+                        <li>Оба могут добавлять платежи</li>
+                    </ul>
+
+                    <p><strong>Поведение системы:</strong></p>
+                    <ul>
+                        <li>Каждый видит <strong>все платежи</strong> по объекту (не только свои)</li>
+                        <li>В истории платежей указано ФИО того, кто внёс запись</li>
+                        <li>Не создаётся конфликтов (платежи не редактируются)</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>4.9.3 Корректировка ошибочного платежа</h4>
+
+                    <p><strong>Ситуация:</strong></p>
+                    <ul>
+                        <li>Бухгалтер ошибся и внёс 90 000 ₽ вместо 900 000 ₽</li>
+                    </ul>
+
+                    <p><strong>Решение:</strong></p>
+                    <ul>
+                        <li>Нельзя удалить/изменить платёж</li>
+                        <li>Нужно создать <strong>корректирующий платёж</strong> на разницу</li>
+                        <li>Добавить платёж: 810 000 ₽ с комментарием "Корректировка платежа от 20.01.2025"</li>
+                    </ul>
+
+                    <p><strong>Итог:</strong></p>
+                    <ul>
+                        <li>В истории два платежа: 90 000 ₽ и 810 000 ₽</li>
+                        <li>Общая сумма: 900 000 ₽ (правильная)</li>
+                        <li>История полная и прозрачная</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="etap5" class="tab-content">
+                <h2>ЭТАП 5: КОНТРОЛЬ ОБЪЁМОВ РАБОТ (ТЕХНАДЗОР)</h2>
+
+                <h3>5.1 Описание роли "Технадзор"</h3>
+
+                <div class="info-box">
+                    <h4>Кто это:</h4>
+                    <ul>
+                        <li>Сотрудник подведомственной организации министерства</li>
+                        <li>Технический надзор за ходом строительства</li>
+                        <li>Контролирует фактическое выполнение работ</li>
+                    </ul>
+
+                    <h4>Основные функции:</h4>
+                    <ol>
+                        <li><strong>Внесение плана-графика</strong> в систему (см. ЭТАП 2)</li>
+                        <li><strong>Проверка объёмов работ</strong> - фиксация процента выполнения этапов</li>
+                        <li><strong>Ответы на обращения подрядчиков</strong> (первичные)</li>
+                        <li><strong>Контроль прогресса</strong> по всем объектам</li>
+                    </ol>
+
+                    <h4>Это НЕ:</h4>
+                    <ul>
+                        <li>НЕ проверяет количество людей/техники (это делает Проверяющий)</li>
+                        <li>НЕ принимает решения о платежах (это Бухгалтер)</li>
+                        <li>НЕ утверждает планы (это Министр)</li>
+                    </ul>
+
+                    <h4>Суть роли:</h4>
+                    <ul>
+                        <li>Проверка физического выполнения работ</li>
+                        <li>Фиксация процента выполнения каждого этапа</li>
+                        <li>Контроль соответствия факта плану</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <strong>Важная особенность:</strong>
+                    <ul>
+                        <li>Технадзор видит <strong>ВСЕ объекты</strong> республики (не привязан к конкретным)</li>
+                        <li><strong>НЕ видит финансы</strong> (платежи, бюджеты по этапам - видит только общий бюджет объекта)</li>
+                        <li>Видит ежедневные проверки ресурсов (люди, техника от Проверяющего)</li>
+                        <li>Видит план-график работ (Gantt)</li>
+                    </ul>
+                </div>
+
+                <h3>5.2 Процесс работы технадзора</h3>
+
+                <div class="role-card">
+                    <h4>Как это происходит в реальности:</h4>
+
+                    <p><strong>1. Выезд на объект</strong></p>
+                    <ul>
+                        <li>Технадзор приходит на стройку</li>
+                        <li>Осматривает выполненные работы</li>
+                        <li>Делает замеры, записи (в блокнот/телефон)</li>
+                        <li>Фотографирует (опционально)</li>
+                    </ul>
+
+                    <p><strong>2. Работа с документами</strong></p>
+                    <ul>
+                        <li>Подрядчик предоставляет документы (акты, замеры, накладные)</li>
+                        <li>Технадзор возвращается в офис</li>
+                        <li>Проверяет документы</li>
+                        <li>Считает/проверяет объёмы</li>
+                    </ul>
+
+                    <p><strong>3. Внесение данных в систему</strong></p>
+                    <ul>
+                        <li>После проверки документов</li>
+                        <li>Вносит процент выполнения этапа</li>
+                        <li>Добавляет комментарий (что сделано)</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Частота проверок:</strong>
+                    <ul>
+                        <li><strong>НЕ строго раз в неделю</strong></li>
+                        <li>В любой момент когда нужно</li>
+                        <li>По мере выполнения работ</li>
+                        <li>Может быть несколько проверок в неделю или одна в две недели</li>
+                    </ul>
+                </div>
+
+                <h3>5.5 Форма добавления проверки объёмов</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Обязательность</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Этап работ</td>
+                            <td>Выбор из списка</td>
+                            <td>Обязательно</td>
+                            <td>Выбор этапа из плана-графика</td>
+                        </tr>
+                        <tr>
+                            <td>Дата проверки</td>
+                            <td>Дата</td>
+                            <td>Обязательно</td>
+                            <td>Дата фактической проверки</td>
+                        </tr>
+                        <tr>
+                            <td>Процент выполнения</td>
+                            <td>Число (0-100)</td>
+                            <td>Обязательно</td>
+                            <td>Процент выполнения этапа</td>
+                        </tr>
+                        <tr>
+                            <td>Комментарий</td>
+                            <td>Текст</td>
+                            <td>Необязательно</td>
+                            <td>Что сделано, замечания</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>5.6 Логика работы формы</h3>
+
+                <div class="role-card">
+                    <h4>5.6.1 Выбор этапа работ</h4>
+
+                    <p><strong>Откуда берется список этапов:</strong></p>
+                    <ul>
+                        <li>Система показывает все этапы из плана-графика этого объекта</li>
+                        <li>Этапы отображаются в хронологическом порядке</li>
+                        <li>Можно выбрать любой этап (не обязательно текущий по датам)</li>
+                    </ul>
+
+                    <p><strong>После выбора этапа автоматически показывается:</strong></p>
+                    <ul>
+                        <li>Период этапа (дата начала - дата окончания)</li>
+                        <li>Текущее выполнение (процент из последней проверки)</li>
+                        <li>По плану на сегодня (рассчитанный процент исходя из прошедшего времени)</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>Пример:</strong><br>
+                        Этап: Фундаментные работы<br>
+                        Период: 01.01.2025 - 15.01.2025 (15 дней)<br>
+                        Сегодня: 08.01.2025 (прошло 7 дней)<br>
+                        По плану должно быть: ~47% (7/15)<br>
+                        Последняя проверка: 45% (от 05.01.2025)
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h4>5.6.2 Дата проверки</h4>
+
+                    <p><strong>Обязательное поле:</strong></p>
+                    <ul>
+                        <li>Дата фактической проверки объекта</li>
+                        <li>Можно выбрать любую дату (прошлую, текущую, будущую)</li>
+                        <li>По умолчанию = сегодняшняя дата</li>
+                    </ul>
+
+                    <p><strong>Примечание:</strong></p>
+                    <ul>
+                        <li>Если технадзор был на объекте вчера, а вносит данные сегодня - выбирает вчерашнюю дату</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>5.6.3 Процент выполнения</h4>
+
+                    <p><strong>Обязательное поле:</strong></p>
+                    <ul>
+                        <li>Число от 0 до 100</li>
+                        <li>Целое число (без десятичных)</li>
+                        <li>Технадзор сам определяет процент на основе осмотра и документов</li>
+                    </ul>
+
+                    <div class="warning-box">
+                        <strong>Валидации:</strong>
+
+                        <p><strong>1. Процент больше 100%:</strong></p>
+                        <div class="info-box">
+                            Ошибка!<br>
+                            Процент не может быть больше 100%.
+                        </div>
+
+                        <p><strong>2. Процент меньше предыдущего:</strong></p>
+                        <div class="info-box">
+                            Внимание!<br>
+                            Вы указали 65%, а предыдущая проверка была 70%.<br>
+                            Процент выполнения уменьшился. Вы уверены?<br>
+                            [Да, продолжить]  [Отмена]
+                        </div>
+
+                        <p><strong>3. Процент равен предыдущему:</strong></p>
+                        <div class="info-box">
+                            Информация<br>
+                            Процент не изменился (70%).<br>
+                            Вы уверены, что хотите создать проверку?<br>
+                            [Да, создать]  [Отмена]
+                        </div>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h4>5.6.4 Комментарий</h4>
+
+                    <p><strong>Необязательное поле:</strong></p>
+                    <ul>
+                        <li>Свободный текст</li>
+                        <li>Описание что сделано, какие работы выполнены</li>
+                        <li>Замечания, проблемы</li>
+                    </ul>
+
+                    <p><strong>Примеры комментариев:</strong></p>
+                    <ul>
+                        <li>"Залито 128 м³ бетона из 150 м³, опалубка установлена"</li>
+                        <li>"Работа идёт с опережением графика"</li>
+                        <li>"Задержка из-за дождей, ожидаем нормализации погоды"</li>
+                        <li>"Выполнены работы согласно проекту"</li>
+                    </ul>
+
+                    <div class="success-box">
+                        <strong>Рекомендация:</strong> Желательно описывать ЧТО именно сделано (в физических единицах: м³, м², шт.). Это помогает министру понимать реальную картину.
+                    </div>
+                </div>
+
+                <h3>5.7 После добавления проверки</h3>
+
+                <div class="success-box">
+                    <p><strong>Что происходит:</strong></p>
+
+                    <ol>
+                        <li>Проверка <strong>сохраняется</strong> в базу данных</li>
+                        <li>Автоматически записывается <strong>ФИО технадзора</strong> (из учётной записи)</li>
+                        <li>Пересчитывается <strong>общий прогресс объекта</strong> (средний процент по всем этапам с учётом их длительности)</li>
+                        <li>Обновляется <strong>статус отклонения</strong> (опережаем/отстаём/в графике)</li>
+                        <li>Проверка появляется в истории проверок этапа</li>
+                        <li>Возврат к детальной информации объекта</li>
+                    </ol>
+
+                    <p><strong>Уведомление:</strong></p>
+                    <div class="info-box">
+                        Проверка добавлена<br>
+                        Этап: Фундаментные работы<br>
+                        Выполнение: 85%<br>
+                        Дата: 20.01.2025
+                    </div>
+                </div>
+
+                <h3>5.8 Редактирование проверки</h3>
+
+                <div class="info-box">
+                    <p><strong>Логика:</strong></p>
+                    <ul>
+                        <li>Технадзор <strong>может редактировать</strong> любую свою проверку</li>
+                        <li>Кнопка [Редактировать] рядом с каждой проверкой в истории</li>
+                        <li>Открывается та же форма с заполненными данными</li>
+                        <li>Можно изменить: дату, процент, комментарий</li>
+                        <li>Нельзя изменить: этап (для этого нужно удалить и создать заново)</li>
+                    </ul>
+
+                    <p><strong>Ограничение:</strong></p>
+                    <ul>
+                        <li>Можно редактировать <strong>только свои</strong> проверки (не проверки других технадзоров)</li>
+                    </ul>
+
+                    <p><strong>Причина:</strong></p>
+                    <ul>
+                        <li>Вдруг технадзор ошибся в процентах</li>
+                        <li>Вдруг появилась новая информация после внесения данных</li>
+                        <li>Нужно дополнить комментарий</li>
+                    </ul>
+                </div>
+
+                <h3>5.10 Что технадзор ВИДИТ (доступ к данным)</h3>
+
+                <div class="success-box">
+                    <h4>Полный доступ:</h4>
+
+                    <p><strong>Видит все объекты республики:</strong></p>
+                    <ul>
+                        <li>Не привязан к конкретным объектам</li>
+                        <li>Может открыть любой объект</li>
+                        <li>Видит всю информацию по всем стройкам</li>
+                    </ul>
+
+                    <p><strong>Видит план-график работ (Gantt):</strong></p>
+                    <ul>
+                        <li>Календарный план</li>
+                        <li>Этапы работ с датами</li>
+                        <li>Запланированные ресурсы (люди, техника)</li>
+                        <li>Может открыть визуализацию gantt_view.html</li>
+                    </ul>
+
+                    <p><strong>Видит ежедневные проверки ресурсов:</strong></p>
+                    <ul>
+                        <li>Данные от Проверяющих</li>
+                        <li>Сколько людей и техники фактически на объекте каждый день</li>
+                        <li>Историю проверок ресурсов</li>
+                    </ul>
+
+                    <p><strong>Видит обращения подрядчиков:</strong></p>
+                    <ul>
+                        <li>Проблемы на объектах</li>
+                        <li>Может отвечать на обращения (первично)</li>
+                        <li>Видит переписку</li>
+                    </ul>
+
+                    <p><strong>Видит аналитику и дашборды:</strong></p>
+                    <ul>
+                        <li>Графики прогресса</li>
+                        <li>Сравнение план/факт</li>
+                        <li>Отклонения по ресурсам и объёмам</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Ограниченный доступ:</h4>
+
+                    <p><strong>Видит ТОЛЬКО общий бюджет объекта:</strong></p>
+                    <ul>
+                        <li>Не видит бюджеты отдельных этапов</li>
+                        <li>Это сделано намеренно, чтобы финансовый контроль был отдельно</li>
+                    </ul>
+
+                    <p><strong>НЕ видит платежи (финансы):</strong></p>
+                    <ul>
+                        <li>Когда и сколько оплачено</li>
+                        <li>Процент финансирования</li>
+                        <li>История платежей</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Почему такое разделение:</h4>
+                    <ul>
+                        <li>Технадзор контролирует <strong>ФИЗИЧЕСКОЕ выполнение</strong></li>
+                        <li>Бухгалтер контролирует <strong>ФИНАНСЫ</strong></li>
+                        <li>Министр видит всё и сопоставляет данные</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="etap6" class="tab-content">
+                <h2>ЭТАП 6: ОБРАЩЕНИЯ ПОДРЯДЧИКА</h2>
+
+                <h3>6.1 Назначение системы обращений</h3>
+
+                <div class="warning-box">
+                    <h4>Проблема:</h4>
+                    <ul>
+                        <li>Подрядчик столкнулся с проблемой на объекте (труба, погода, нет материалов)</li>
+                        <li>Отправил <strong>официальное письмо</strong> министру (бумажное или email)</li>
+                        <li>Ждёт ответа, но письмо может идти долго</li>
+                        <li>Стройка <strong>стоит</strong>, а министр не знает о срочности</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Решение:</h4>
+                    <ul>
+                        <li>Подрядчик создаёт <strong>обращение в системе</strong> параллельно с официальным письмом</li>
+                        <li>Министр/технадзор <strong>сразу видят</strong> проблему</li>
+                        <li>Могут оперативно ответить в системе</li>
+                        <li>Готовят официальный ответ параллельно</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Преимущества:</h4>
+                    <ul>
+                        <li><strong>Срочность</strong> - министр сразу видит проблему, не ждёт пока письмо дойдёт</li>
+                        <li><strong>Прозрачность</strong> - все видят что подрядчик ждёт ответа X дней</li>
+                        <li><strong>Контроль</strong> - нельзя "забыть" ответить на обращение</li>
+                        <li><strong>История</strong> - вся переписка сохраняется</li>
+                    </ul>
+                </div>
+
+                <h3>6.2 Описание роли "Подрядчик"</h3>
+
+                <div class="info-box">
+                    <h4>Кто это:</h4>
+                    <ul>
+                        <li>Юридическое лицо (ООО, ИП), выполняющее строительные работы</li>
+                        <li>Привязан к конкретным объектам как исполнитель</li>
+                    </ul>
+
+                    <h4>Основные функции:</h4>
+                    <ol>
+                        <li><strong>Просмотр своих объектов</strong> - только те, где он подрядчик</li>
+                        <li><strong>Просмотр плана-графика</strong> (read-only) - видит сроки и этапы</li>
+                        <li><strong>Просмотр фактического выполнения</strong> - успевает или отстаёт</li>
+                        <li><strong>Создание обращений</strong> - фиксация проблем и вопросов</li>
+                        <li><strong>Просмотр ответов</strong> - переписка с министром/технадзором</li>
+                    </ol>
+                </div>
+
+                <div class="success-box">
+                    <h4>Что подрядчик ВИДИТ:</h4>
+                    <ul>
+                        <li>Свои объекты (где он подрядчик)</li>
+                        <li>План-график работ (Gantt) - read-only</li>
+                        <li>Фактическое выполнение (успевает или отстаёт)</li>
+                        <li>Проверки технадзора (процент выполнения по объёмам)</li>
+                        <li>Ежедневные проверки ресурсов (сколько людей/техники фиксируют проверяющие)</li>
+                        <li>Свои обращения и ответы на них</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Что подрядчик НЕ ВИДИТ:</h4>
+                    <ul>
+                        <li><strong>Финансы</strong> (платежи, бюджеты этапов, когда и сколько оплачено)</li>
+                        <li><strong>Другие объекты</strong> (конкурентов, других подрядчиков)</li>
+                        <li><strong>Обращения других подрядчиков</strong></li>
+                    </ul>
+
+                    <h4>Что подрядчик НЕ МОЖЕТ делать:</h4>
+                    <ul>
+                        <li>Редактировать план-график</li>
+                        <li>Редактировать проверки (ресурсов, объёмов)</li>
+                        <li>Создавать объекты</li>
+                        <li>Видеть/изменять финансовую информацию</li>
+                        <li><strong>Только:</strong> создавать обращения и видеть ответы</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Зачем подрядчику видеть контроль:</h4>
+                    <ul>
+                        <li>Понимает успевает он или нет по плану</li>
+                        <li>Видит замечания технадзора к качеству/объёмам</li>
+                        <li>Может планировать свою работу</li>
+                        <li>Прозрачность со стороны министерства</li>
+                    </ul>
+                </div>
+
+                <h3>6.5 Форма создания обращения</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Обязательность</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Этап работ</td>
+                            <td>Выбор из списка</td>
+                            <td>Обязательно</td>
+                            <td>К какому этапу относится проблема</td>
+                        </tr>
+                        <tr>
+                            <td>Тип обращения</td>
+                            <td>Выбор из списка</td>
+                            <td>Обязательно</td>
+                            <td>Категория проблемы</td>
+                        </tr>
+                        <tr>
+                            <td>Тема обращения</td>
+                            <td>Текст</td>
+                            <td>Обязательно</td>
+                            <td>Краткое описание (заголовок)</td>
+                        </tr>
+                        <tr>
+                            <td>Описание проблемы</td>
+                            <td>Текст</td>
+                            <td>Обязательно</td>
+                            <td>Подробное описание + реквизиты письма</td>
+                        </tr>
+                        <tr>
+                            <td>Дата остановки работ</td>
+                            <td>Дата</td>
+                            <td>Необязательно</td>
+                            <td>Если работы остановлены</td>
+                        </tr>
+                        <tr>
+                            <td>Фото</td>
+                            <td>Файлы</td>
+                            <td>Необязательно</td>
+                            <td>До 5 фотографий</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Доступные типы обращений:</h4>
+                <ul>
+                    <li>Препятствие на объекте (труба, кабель, коммуникации)</li>
+                    <li>Погодные условия (дождь, снег, мороз)</li>
+                    <li>Отсутствие материалов (задержка поставки)</li>
+                    <li>Проблема с техникой (поломка, недоступность)</li>
+                    <li>Вопрос по проекту (несоответствие, неясность)</li>
+                    <li>Согласование изменений</li>
+                    <li>Другое</li>
+                </ul>
+
+                <h3>6.6 Статусы обращений</h3>
+
+                <div class="role-card">
+                    <h4>Жизненный цикл обращения:</h4>
+
+                    <p><strong>1. Новое</strong></p>
+                    <ul>
+                        <li>Только создано подрядчиком</li>
+                        <li>Никто ещё не прочитал</li>
+                        <li>Требует внимания</li>
+                    </ul>
+
+                    <p><strong>2. На рассмотрении</strong></p>
+                    <ul>
+                        <li>Министр/технадзор прочитали</li>
+                        <li>Готовят ответ</li>
+                        <li>Могут запросить дополнительную информацию</li>
+                    </ul>
+
+                    <p><strong>3. Решено</strong></p>
+                    <ul>
+                        <li>Ответ получен</li>
+                        <li>Проблема решается или решена</li>
+                        <li>Подрядчик может возобновить работы</li>
+                    </ul>
+
+                    <p><strong>4. Закрыто</strong></p>
+                    <ul>
+                        <li>Вопрос полностью решён</li>
+                        <li>Работы возобновлены</li>
+                        <li>Архив</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Автоматические переходы:</h4>
+                    <ul>
+                        <li>Подрядчик создал → статус <strong>"Новое"</strong></li>
+                        <li>Министр/технадзор открыли обращение → статус <strong>"На рассмотрении"</strong></li>
+                        <li>Министр/технадзор написали ответ → статус <strong>"Решено"</strong></li>
+                        <li>Министр нажал [Закрыть обращение] → статус <strong>"Закрыто"</strong></li>
+                    </ul>
+                </div>
+
+                <h3>6.9 Кто отвечает на обращения</h3>
+
+                <div class="role-card">
+                    <h4>Иерархия ответов:</h4>
+
+                    <p><strong>1. Первично отвечает Технадзор</strong></p>
+                    <ul>
+                        <li>Видит все новые обращения</li>
+                        <li>Может оперативно ответить</li>
+                        <li>Может выехать на объект для проверки</li>
+                    </ul>
+
+                    <p><strong>2. Министр видит все обращения</strong></p>
+                    <ul>
+                        <li>Может ответить в любой момент</li>
+                        <li>Может вмешаться в решение проблемы</li>
+                        <li>Принимает финальные решения</li>
+                    </ul>
+
+                    <p><strong>3. Оба видят всю историю переписки</strong></p>
+                    <ul>
+                        <li>Технадзор и Министр видят все ответы друг друга</li>
+                        <li>Подрядчик видит все ответы</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Права:</h4>
+                    <ul>
+                        <li>Технадзор может отвечать</li>
+                        <li>Министр может отвечать</li>
+                        <li>Министр может закрывать обращения</li>
+                        <li>Технадзор может менять статус на "Решено"</li>
+                        <li>Подрядчик НЕ может отвечать (только создаёт обращения и читает ответы)</li>
+                    </ul>
+                </div>
+
+                <h3>6.11 Уведомления</h3>
+
+                <div class="role-card">
+                    <h4>Для подрядчика:</h4>
+                    <ul>
+                        <li>Email/SMS при ответе на обращение</li>
+                        <li>Push-уведомление (если есть мобильное приложение)</li>
+                    </ul>
+
+                    <h4>Для Министра:</h4>
+                    <ul>
+                        <li>Email при новом обращении (особенно если работы остановлены)</li>
+                        <li>Дашборд показывает количество новых обращений</li>
+                    </ul>
+
+                    <h4>Для Технадзора:</h4>
+                    <ul>
+                        <li>Email при новом обращении по объектам</li>
+                        <li>Уведомление если обращение не отвечено более 24 часов</li>
+                    </ul>
+                </div>
+
+                <h3>6.12 Метрики и контроль</h3>
+
+                <div class="info-box">
+                    <h4>Система отслеживает:</h4>
+                    <ul>
+                        <li><strong>Время ожидания ответа</strong> (с момента создания до первого ответа)</li>
+                        <li><strong>Среднее время решения</strong> обращений</li>
+                        <li><strong>Количество обращений</strong> по объектам (индикатор проблемных объектов)</li>
+                        <li><strong>Просроченные обращения</strong> (более 24 часов без ответа)</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Для Министра отображается:</h4>
+                    <div class="role-card">
+                        <strong>Статистика обращений за месяц:</strong><br><br>
+                        • Всего обращений: 45<br>
+                        • Среднее время ответа: 4.2 часа<br>
+                        • Решено в срок (&lt;24ч): 38 (84%)<br>
+                        • Просрочено: 7 (16%)<br>
+                        • Проблемных объектов (&gt;5 обращений): 2
+                    </div>
+                </div>
+
+                <h3>Пример использования</h3>
+
+                <div class="role-card">
+                    <h4>Сценарий: Подрядчик наткнулся на трубу</h4>
+
+                    <p><strong>День 1, 10:00 - Проблема на объекте</strong></p>
+                    <ul>
+                        <li>Подрядчик копает котлован, наткнулся на водопроводную трубу</li>
+                        <li>Работы остановлены</li>
+                        <li>Составляет официальное письмо министру</li>
+                        <li>Отправляет письмо (почта России, может идти 3-5 дней)</li>
+                    </ul>
+
+                    <p><strong>День 1, 10:30 - Обращение в системе</strong></p>
+                    <ul>
+                        <li>Подрядчик заходит в систему</li>
+                        <li>Создаёт обращение:
+                            <ul>
+                                <li>Тип: Препятствие на объекте</li>
+                                <li>Тема: "Обнаружена водопроводная труба"</li>
+                                <li>Описание: "При копке котлована на глубине 2м обнаружена труба. Письмо №123 от 10.01.2025 направлено министру"</li>
+                                <li>Дата остановки: 10.01.2025</li>
+                                <li>Прикладывает фото трубы</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>День 1, 10:31 - Уведомление</strong></p>
+                    <ul>
+                        <li>Технадзор получает email: "Новое обращение по объекту Школа №5"</li>
+                        <li>Министр видит на дашборде: "1 новое обращение"</li>
+                    </ul>
+
+                    <p><strong>День 1, 11:00 - Реакция технадзора</strong></p>
+                    <ul>
+                        <li>Технадзор открывает обращение (статус → "На рассмотрении")</li>
+                        <li>Звонит в водоканал, уточняет информацию</li>
+                        <li>Пишет ответ: "Связались с водоканалом, труба на их балансе. Завтра приедут специалисты для переноса. Ориентировочно работы можно возобновить 12.01.2025"</li>
+                        <li>Статус → "Решено"</li>
+                    </ul>
+
+                    <p><strong>День 1, 11:05 - Подрядчик видит ответ</strong></p>
+                    <ul>
+                        <li>Получает SMS: "Ответ на обращение #45"</li>
+                        <li>Читает ответ технадзора</li>
+                        <li>Понимает план действий</li>
+                    </ul>
+
+                    <p><strong>День 3, 15:00 - Завершение</strong></p>
+                    <ul>
+                        <li>Труба перенесена</li>
+                        <li>Работы возобновлены</li>
+                        <li>Министр закрывает обращение (статус → "Закрыто")</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <strong>Результат:</strong> Проблема решена за 3 дня вместо потенциальных 7-10 дней ожидания ответа на бумажное письмо. Министр видел проблему в реальном времени.
+                </div>
+            </div>
+
+            <div id="etap7" class="tab-content">
+                <h2>ЭТАП 7: ИНТЕРФЕЙС МИНИСТРА (ГЛАВНЫЙ АДМИНИСТРАТОР)</h2>
+
+                <h3>7.1 Описание роли "Министр"</h3>
+
+                <div class="info-box">
+                    <h4>Кто это:</h4>
+                    <ul>
+                        <li>Главный администратор республики (Министр строительства КЧР)</li>
+                        <li>Высшее должностное лицо министерства</li>
+                        <li>Полный контроль над всеми объектами и пользователями</li>
+                    </ul>
+
+                    <h4>Главная цель:</h4>
+                    <ul>
+                        <li>Централизованный контроль всех строительных объектов республики</li>
+                        <li>Принятие управленческих решений на основе данных</li>
+                        <li>Координация работы подчинённых служб</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Особенности роли:</h4>
+                    <ul>
+                        <li>Видит <strong>ВСЁ</strong> по республике</li>
+                        <li>Может <strong>всё</strong> редактировать и изменять</li>
+                        <li>Создаёт объекты, пользователей, подрядчиков</li>
+                        <li>Полный доступ к финансам</li>
+                        <li>Может отвечать на обращения подрядчиков</li>
+                        <li>Выгружает отчёты и аналитику</li>
+                    </ul>
+                </div>
+
+                <h3>7.2 Главный дашборд министра</h3>
+
+                <div class="role-card">
+                    <h4>Элементы дашборда:</h4>
+
+                    <p><strong>1. Статистические карточки</strong></p>
+                    <ul>
+                        <li>Всего объектов</li>
+                        <li>В работе / Завершено</li>
+                        <li>Общий бюджет / Освоено</li>
+                        <li>Средний прогресс</li>
+                        <li>Количество проблем</li>
+                    </ul>
+
+                    <p><strong>2. Обращения подрядчиков</strong></p>
+                    <ul>
+                        <li>Количество новых без ответа (красный индикатор)</li>
+                        <li>На рассмотрении</li>
+                        <li>Решённые за период</li>
+                    </ul>
+
+                    <p><strong>3. Быстрые действия</strong></p>
+                    <ul>
+                        <li>Создать новый объект</li>
+                        <li>Создать пользователя</li>
+                        <li>Перейти к отчётам</li>
+                    </ul>
+
+                    <p><strong>4. Графики и визуализация</strong></p>
+                    <ul>
+                        <li>График выполнения по месяцам</li>
+                        <li>Распределение бюджета</li>
+                        <li>Топ проблемных объектов</li>
+                    </ul>
+                </div>
+
+                <h3>7.3 Управление объектами</h3>
+
+                <div class="role-card">
+                    <h4>Фильтры и сортировка:</h4>
+
+                    <p><strong>1. Статус:</strong></p>
+                    <ul>
+                        <li>Все</li>
+                        <li>В работе</li>
+                        <li>Завершённые</li>
+                        <li>Приостановленные</li>
+                    </ul>
+
+                    <p><strong>2. Подрядчик:</strong></p>
+                    <ul>
+                        <li>Все</li>
+                        <li>Выбор конкретного подрядчика</li>
+                    </ul>
+
+                    <p><strong>3. Отклонение от плана:</strong></p>
+                    <ul>
+                        <li>Все</li>
+                        <li>Опережают (&gt;+5%)</li>
+                        <li>Успевают (-5% до +5%)</li>
+                        <li>Отстают (-10% до -5%)</li>
+                        <li>Критично отстают (&lt;-10%)</li>
+                    </ul>
+
+                    <p><strong>4. Сортировка:</strong></p>
+                    <ul>
+                        <li>По дате создания (новые/старые)</li>
+                        <li>По проценту выполнения (возрастание/убывание)</li>
+                        <li>По бюджету</li>
+                        <li>По отклонению от плана</li>
+                    </ul>
+
+                    <p><strong>5. Поиск:</strong></p>
+                    <ul>
+                        <li>По названию объекта</li>
+                        <li>По адресу</li>
+                        <li>По подрядчику</li>
+                    </ul>
+                </div>
+
+                <h3>7.4 Детальная информация по объекту</h3>
+
+                <div class="success-box">
+                    <h4>Министр видит ВСЁ:</h4>
+                    <ul>
+                        <li>Общую статистику выполнения</li>
+                        <li>Финансы (бюджет, освоено, осталось)</li>
+                        <li>Привязанные пользователи</li>
+                        <li>Обращения подрядчиков</li>
+                        <li>Этапы работ с финансами</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Ключевая особенность:</h4>
+                    <p>Министр видит <strong>расхождения</strong> между объёмами и финансами:</p>
+                    <ul>
+                        <li>Может выявлять коррупцию: оплачено 50%, а сделано 70% = хорошо</li>
+                        <li>Или наоборот: оплачено 90%, а сделано 50% = проблема</li>
+                    </ul>
+                </div>
+
+                <h3>7.9 Аналитика и отчёты</h3>
+
+                <div class="role-card">
+                    <h4>Типы отчётов:</h4>
+
+                    <p><strong>1. Сводный отчёт по всем объектам</strong></p>
+                    <ul>
+                        <li>Статус каждого объекта</li>
+                        <li>Прогресс выполнения</li>
+                        <li>Финансирование</li>
+                        <li>Проблемы и обращения</li>
+                    </ul>
+
+                    <p><strong>2. Финансовый отчёт</strong></p>
+                    <ul>
+                        <li>Бюджет по объектам</li>
+                        <li>Освоение средств</li>
+                        <li>Платежи по месяцам</li>
+                        <li>Расхождения финансы/объёмы</li>
+                    </ul>
+
+                    <p><strong>3. Отчёт по обращениям</strong></p>
+                    <ul>
+                        <li>Количество обращений</li>
+                        <li>Среднее время ответа</li>
+                        <li>Топ проблем</li>
+                        <li>Статистика по подрядчикам</li>
+                    </ul>
+
+                    <p><strong>4. Детальный отчёт по объекту</strong></p>
+                    <ul>
+                        <li>План-график</li>
+                        <li>Фактическое выполнение</li>
+                        <li>Проверки (ресурсы, объёмы)</li>
+                        <li>Финансы</li>
+                        <li>Обращения</li>
+                    </ul>
+
+                    <p><strong>5. Отчёт для Правительства</strong></p>
+                    <ul>
+                        <li>Краткая сводка по республике</li>
+                        <li>Ключевые показатели</li>
+                        <li>Топ достижений</li>
+                        <li>Проблемы и риски</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Формат отчётов:</h4>
+
+                    <p><strong>1. Excel (.xlsx)</strong></p>
+                    <ul>
+                        <li>Подробные таблицы</li>
+                        <li>Возможность фильтрации</li>
+                        <li>Сводные таблицы</li>
+                        <li>Графики</li>
+                    </ul>
+
+                    <p><strong>2. PDF (.pdf)</strong></p>
+                    <ul>
+                        <li>Презентабельный вид</li>
+                        <li>Логотип министерства</li>
+                        <li>Подпись министра</li>
+                        <li>Печать</li>
+                    </ul>
+                </div>
+
+                <h3>7.11 Графики и визуализация</h3>
+
+                <div class="role-card">
+                    <h4>Министр видит различные графики на дашборде:</h4>
+
+                    <p><strong>1. График выполнения по месяцам (тренд)</strong></p>
+                    <ul>
+                        <li>Линейный график</li>
+                        <li>Плановое выполнение vs фактическое</li>
+                        <li>Прогноз на будущие месяцы</li>
+                    </ul>
+
+                    <p><strong>2. Распределение бюджета по объектам</strong></p>
+                    <ul>
+                        <li>Круговая диаграмма</li>
+                        <li>Показывает долю каждого объекта в общем бюджете</li>
+                    </ul>
+
+                    <p><strong>3. Освоение средств</strong></p>
+                    <ul>
+                        <li>Столбчатая диаграмма</li>
+                        <li>По месяцам: план vs факт</li>
+                    </ul>
+
+                    <p><strong>4. Топ проблемных объектов</strong></p>
+                    <ul>
+                        <li>Таблица с сортировкой</li>
+                        <li>Объекты с наибольшим отставанием</li>
+                    </ul>
+
+                    <p><strong>5. Статистика обращений</strong></p>
+                    <ul>
+                        <li>Динамика обращений по неделям</li>
+                        <li>Среднее время ответа</li>
+                        <li>Топ причин обращений</li>
+                    </ul>
+                </div>
+
+                <h3>7.13 Что министр НЕ может делать</h3>
+
+                <div class="warning-box">
+                    <h4>Единственные ограничения:</h4>
+
+                    <p><strong>Не может создавать другие республики:</strong></p>
+                    <ul>
+                        <li>Только суперадмин создаёт республики</li>
+                    </ul>
+
+                    <p><strong>Не может видеть данные других республик:</strong></p>
+                    <ul>
+                        <li>Видит только свою республику (КЧР)</li>
+                    </ul>
+
+                    <p><strong>Не может управлять подпиской:</strong></p>
+                    <ul>
+                        <li>Только суперадмин управляет оплатой/тарифами</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>ВСЁ остальное министр МОЖЕТ:</h4>
+                    <ul>
+                        <li>Создавать/редактировать/удалять объекты</li>
+                        <li>Создавать/редактировать/деактивировать пользователей</li>
+                        <li>Видеть все данные (ресурсы, объёмы, финансы)</li>
+                        <li>Отвечать на обращения</li>
+                        <li>Выгружать любые отчёты</li>
+                        <li>Редактировать план-график</li>
+                        <li>Управлять настройками</li>
+                    </ul>
+                </div>
+
+                <h3>Управление пользователями</h3>
+
+                <div class="role-card">
+                    <h4>Министр может создавать пользователей всех ролей:</h4>
+
+                    <p><strong>Создание пользователя:</strong></p>
+                    <ul>
+                        <li>ФИО</li>
+                        <li>Email</li>
+                        <li>Телефон</li>
+                        <li>Роль (Технадзор, Проверяющий, Бухгалтер, Правительство)</li>
+                        <li>Привязка к объектам (для Проверяющих и Бухгалтеров)</li>
+                    </ul>
+
+                    <p><strong>Привязка к объектам:</strong></p>
+                    <ul>
+                        <li>Один пользователь может быть привязан к нескольким объектам</li>
+                        <li>На одном объекте может быть несколько проверяющих/бухгалтеров</li>
+                        <li>Технадзор видит все объекты (привязка не нужна)</li>
+                    </ul>
+
+                    <p><strong>Деактивация пользователей:</strong></p>
+                    <ul>
+                        <li>Пользователя можно деактивировать (не удалять)</li>
+                        <li>Деактивированный пользователь не может войти в систему</li>
+                        <li>История его действий сохраняется</li>
+                    </ul>
+                </div>
+
+                <h3>Управление подрядчиками</h3>
+
+                <div class="role-card">
+                    <h4>Создание подрядчика:</h4>
+                    <ul>
+                        <li>Полное название (ООО, ИП)</li>
+                        <li>ИНН</li>
+                        <li>Телефон</li>
+                        <li>Email</li>
+                        <li>ФИО ответственного лица</li>
+                        <li>Создание учетной записи для доступа в систему (опционально)</li>
+                    </ul>
+
+                    <h4>Редактирование подрядчика:</h4>
+                    <ul>
+                        <li>Изменение контактов</li>
+                        <li>Изменение ответственного лица</li>
+                        <li>Деактивация (если больше не работает)</li>
+                    </ul>
+
+                    <h4>Просмотр статистики по подрядчику:</h4>
+                    <ul>
+                        <li>Количество объектов</li>
+                        <li>Средний процент выполнения</li>
+                        <li>Количество просроченных объектов</li>
+                        <li>Количество обращений</li>
+                    </ul>
+                </div>
+
+                <h3>Настройки системы</h3>
+
+                <div class="info-box">
+                    <h4>Министр может настраивать:</h4>
+
+                    <p><strong>Уведомления:</strong></p>
+                    <ul>
+                        <li>Время отправки напоминаний проверяющим</li>
+                        <li>Email-адреса для получения уведомлений</li>
+                        <li>Настройки критичности (когда отправлять срочные уведомления)</li>
+                    </ul>
+
+                    <p><strong>Справочники:</strong></p>
+                    <ul>
+                        <li>Добавление новых видов техники</li>
+                        <li>Добавление типов обращений</li>
+                        <li>Настройка статусов объектов</li>
+                    </ul>
+
+                    <p><strong>Внешний вид:</strong></p>
+                    <ul>
+                        <li>Логотип министерства</li>
+                        <li>Контактная информация</li>
+                        <li>Настройки отчётов (шаблоны)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="etap8" class="tab-content">
+                <h2>ЭТАП 8: ИНТЕРФЕЙС ПРАВИТЕЛЬСТВА</h2>
+
+                <h3>Описание роли</h3>
+
+                <div class="info-box">
+                    <p><strong>Правительство (Губернатор и его аппарат)</strong> - роль для высшего руководства республики, которому нужен доступ к данным для надзора и отчётности, но без права вмешиваться в рабочие процессы министерства.</p>
+
+                    <h4>Главный принцип:</h4>
+                    <p style="font-size: 18px; color: #764ba2;"><strong>Видят ВСЁ, но изменять НИЧЕГО не могут.</strong></p>
+                </div>
+
+                <h3>8.1 Основные возможности</h3>
+
+                <div class="success-box">
+                    <h4>Доступные функции:</h4>
+                    <ul>
+                        <li>✅ Просмотр всех строительных объектов республики</li>
+                        <li>✅ Просмотр всех планов-графиков (диаграммы Ганта)</li>
+                        <li>✅ Просмотр всех финансовых данных (бюджеты, платежи, расхождения)</li>
+                        <li>✅ Просмотр всех проверок (ресурсы, объёмы работ)</li>
+                        <li>✅ Просмотр обращений подрядчиков</li>
+                        <li>✅ Просмотр дашборда со статистикой и графиками</li>
+                        <li>✅ Выгрузка отчётов (Excel, PDF)</li>
+                        <li>✅ Фильтрация и поиск по объектам</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Запрещённые функции:</h4>
+                    <ul>
+                        <li>❌ Создание объектов</li>
+                        <li>❌ Редактирование объектов</li>
+                        <li>❌ Удаление объектов</li>
+                        <li>❌ Создание пользователей</li>
+                        <li>❌ Управление пользователями</li>
+                        <li>❌ Создание подрядчиков</li>
+                        <li>❌ Внесение проверок (ресурсы, объёмы, платежи)</li>
+                        <li>❌ Ответы на обращения</li>
+                        <li>❌ Любые изменения данных</li>
+                    </ul>
+                </div>
+
+                <h3>8.2 Главный экран (дашборд)</h3>
+
+                <div class="info-box">
+                    <p><strong>Интерфейс идентичен интерфейсу Министра, но БЕЗ кнопок действий.</strong></p>
+                </div>
+
+                <div class="role-card">
+                    <h4>Блок статистики:</h4>
+                    <ul>
+                        <li>📊 Всего объектов</li>
+                        <li>🏗️ В работе / Завершено / Новые</li>
+                        <li>💰 Общий бюджет / Выплачено</li>
+                        <li>⏱️ Просрочено объектов</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>Графики (те же, что у Министра):</h4>
+
+                    <p><strong>1. Выполнение по срокам</strong> (круговая диаграмма)</p>
+                    <ul>
+                        <li>Опережают график</li>
+                        <li>В графике</li>
+                        <li>Отстают от графика</li>
+                        <li>Критическое отставание</li>
+                    </ul>
+
+                    <p><strong>2. Финансовая дисциплина</strong> (столбчатая диаграмма по месяцам)</p>
+                    <ul>
+                        <li>План платежей</li>
+                        <li>Фактические платежи</li>
+                        <li>Расхождения</li>
+                    </ul>
+
+                    <p><strong>3. Расхождения метрик</strong> (график линейный)</p>
+                    <ul>
+                        <li>Ресурсы (план vs факт)</li>
+                        <li>Объёмы работ</li>
+                        <li>Финансы</li>
+                        <li>Среднее расхождение</li>
+                    </ul>
+
+                    <p><strong>4. Активность подрядчиков</strong> (таблица топ-10)</p>
+                    <ul>
+                        <li>ФИО подрядчика</li>
+                        <li>Количество объектов</li>
+                        <li>Выполнение в срок (%)</li>
+                        <li>Средний процент отклонения</li>
+                    </ul>
+                </div>
+
+                <h3>8.3 Список объектов</h3>
+
+                <div class="role-card">
+                    <h4>Фильтры (те же, что у Министра):</h4>
+                    <ul>
+                        <li>По статусу (новые, в работе, завершённые, просроченные)</li>
+                        <li>По подрядчику</li>
+                        <li>По проценту выполнения (0-25%, 25-50%, 50-75%, 75-100%)</li>
+                        <li>По наличию расхождений метрик</li>
+                        <li>По датам начала/окончания</li>
+                        <li>По району республики</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>ВАЖНО:</strong> Нет кнопки "➕ Создать объект"</p>
+                </div>
+
+                <h3>8.4 Страница объекта</h3>
+
+                <div class="info-box">
+                    <p><strong>При клике на объект открывается детальная страница (как у Министра, но read-only).</strong></p>
+                </div>
+
+                <div class="role-card">
+                    <h4>Вкладки:</h4>
+
+                    <p><strong>1. План-график (Gantt)</strong></p>
+                    <ul>
+                        <li>Полная диаграмма Ганта со всеми этапами</li>
+                        <li>График ресурсов (люди, техника)</li>
+                        <li>Цветовая индикация отклонений</li>
+                        <li><strong>Нет кнопок редактирования</strong></li>
+                    </ul>
+
+                    <p><strong>2. Проверки ресурсов</strong></p>
+                    <ul>
+                        <li>История всех ежедневных проверок</li>
+                        <li>График план vs факт</li>
+                        <li>Комментарии проверяющих</li>
+                        <li><strong>Нет формы для добавления проверки</strong></li>
+                    </ul>
+
+                    <p><strong>3. Контроль объёмов</strong></p>
+                    <ul>
+                        <li>Все проверки технадзора</li>
+                        <li>Процент выполнения по этапам</li>
+                        <li>График прогресса</li>
+                        <li><strong>Нет формы для добавления проверки</strong></li>
+                    </ul>
+
+                    <p><strong>4. Финансы</strong></p>
+                    <ul>
+                        <li>Все платежи с датами</li>
+                        <li>Разбивка по этапам</li>
+                        <li>Процент оплаты</li>
+                        <li>Расхождения с объёмами работ</li>
+                        <li><strong>Нет формы для добавления платежа</strong></li>
+                    </ul>
+
+                    <p><strong>5. Обращения подрядчика</strong></p>
+                    <ul>
+                        <li>Все обращения со статусами</li>
+                        <li>История ответов</li>
+                        <li>Прикреплённые фото</li>
+                        <li><strong>Нет возможности ответить</strong></li>
+                    </ul>
+
+                    <p><strong>6. Общая информация</strong></p>
+                    <ul>
+                        <li>Название, адрес, сроки</li>
+                        <li>Подрядчик (контакты)</li>
+                        <li>Бюджет и финансирование</li>
+                        <li>Назначенные пользователи</li>
+                        <li><strong>Нет кнопок редактирования</strong></li>
+                    </ul>
+                </div>
+
+                <h3>8.5 Отчёты</h3>
+
+                <div class="success-box">
+                    <p><strong>Правительство может выгружать отчёты (как Министр):</strong></p>
+                </div>
+
+                <div class="role-card">
+                    <h4>Доступные отчёты:</h4>
+
+                    <p><strong>1. Общий отчёт по республике (Excel)</strong></p>
+                    <ul>
+                        <li>Все объекты со статусами</li>
+                        <li>Финансовые показатели</li>
+                        <li>Прогресс по срокам</li>
+                        <li>Расхождения метрик</li>
+                    </ul>
+
+                    <p><strong>2. Отчёт по объекту (PDF)</strong></p>
+                    <ul>
+                        <li>Детальная информация по одному объекту</li>
+                        <li>План-график с процентами</li>
+                        <li>Все проверки и платежи</li>
+                        <li>Фотоотчёты</li>
+                    </ul>
+
+                    <p><strong>3. Финансовый отчёт (Excel)</strong></p>
+                    <ul>
+                        <li>Бюджеты и платежи по всем объектам</li>
+                        <li>Расхождения с объёмами работ</li>
+                        <li>Просроченные платежи</li>
+                        <li>Группировка по подрядчикам</li>
+                    </ul>
+
+                    <p><strong>4. Отчёт по срокам (Excel)</strong></p>
+                    <ul>
+                        <li>Объекты в графике / с отставанием</li>
+                        <li>Прогноз завершения</li>
+                        <li>Критичные объекты</li>
+                    </ul>
+
+                    <p><strong>5. Отчёт по обращениям (PDF)</strong></p>
+                    <ul>
+                        <li>Все обращения подрядчиков</li>
+                        <li>Статусы и сроки ответов</li>
+                        <li>Типы проблем</li>
+                        <li>Статистика решения</li>
+                    </ul>
+                </div>
+
+                <h3>8.7 Отличия от интерфейса Министра</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Функция</th>
+                            <th>Министр</th>
+                            <th>Правительство</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Просмотр объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Создание объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Редактирование объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр финансов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Управление пользователями</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Управление подрядчиками</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ответы на обращения</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-no">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td>Выгрузка отчётов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Просмотр дашборда</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Фильтрация объектов</td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                            <td><span class="badge badge-yes">✅</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>8.9 Уведомления</h3>
+
+                <div class="warning-box">
+                    <h4>Правительство НЕ получает уведомления о рабочих процессах:</h4>
+                    <ul>
+                        <li>❌ Новые обращения подрядчиков</li>
+                        <li>❌ Просроченные проверки</li>
+                        <li>❌ Отклонения метрик</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Получает только сводки (опционально, настраивается):</h4>
+                    <ul>
+                        <li>✅ Еженедельный отчёт по строительству (email)</li>
+                        <li>✅ Ежемесячный финансовый отчёт (email)</li>
+                        <li>✅ Уведомления о критических проблемах (только если Министр отметит проблему как критичную)</li>
+                    </ul>
+                </div>
+
+                <h3>8.10 Зачем эта роль?</h3>
+
+                <div class="info-box">
+                    <h4>Причины существования роли Правительство:</h4>
+
+                    <ol>
+                        <li><strong>Прозрачность</strong> - высшее руководство видит реальную ситуацию</li>
+                        <li><strong>Невмешательство</strong> - не мешают рабочему процессу Министерства</li>
+                        <li><strong>Отчётность</strong> - могут формировать свои отчёты для вышестоящих инстанций</li>
+                        <li><strong>Контроль</strong> - видят расхождения и проблемы, могут задать вопросы Министру напрямую</li>
+                        <li><strong>Доверие</strong> - доступ к данным без права редактирования исключает подозрения в манипуляциях</li>
+                    </ol>
+                </div>
+
+                <h3>8.11 Сценарии использования</h3>
+
+                <div class="role-card">
+                    <h4>Сценарий 1: Подготовка к совещанию</h4>
+
+                    <p>Заместитель Главы Республики готовится к совещанию по строительству:</p>
+
+                    <ol>
+                        <li>Заходит в систему</li>
+                        <li>Смотрит дашборд - видит общую картину</li>
+                        <li>Фильтрует объекты с критическим отставанием</li>
+                        <li>Открывает детали проблемных объектов</li>
+                        <li>Смотрит обращения подрядчиков и ответы Министерства</li>
+                        <li>Выгружает отчёт Excel для совещания</li>
+                        <li>На совещании задаёт Министру вопросы на основе данных</li>
+                    </ol>
+                </div>
+
+                <div class="role-card">
+                    <h4>Сценарий 2: Контроль финансов</h4>
+
+                    <p>Финансовый советник Губернатора проверяет расходы:</p>
+
+                    <ol>
+                        <li>Заходит в раздел "Финансы"</li>
+                        <li>Смотрит общую сумму платежей за месяц</li>
+                        <li>Фильтрует объекты с расхождением платежей и объёмов работ</li>
+                        <li>Открывает детали объектов с красными индикаторами 🔴</li>
+                        <li>Формирует список вопросов для Министра</li>
+                        <li>Выгружает финансовый отчёт</li>
+                    </ol>
+                </div>
+
+                <div class="role-card">
+                    <h4>Сценарий 3: Запрос от прокуратуры</h4>
+
+                    <p>Прокуратура запросила данные по конкретному объекту:</p>
+
+                    <ol>
+                        <li>Сотрудник аппарата Правительства заходит в систему</li>
+                        <li>Находит объект по названию</li>
+                        <li>Открывает детали</li>
+                        <li>Выгружает PDF-отчёт по объекту с планом-графиком и платежами</li>
+                        <li>Передаёт отчёт в прокуратуру</li>
+                    </ol>
+                </div>
+
+                <h3>8.12 Безопасность</h3>
+
+                <div class="warning-box">
+                    <h4>Меры безопасности для роли Правительство:</h4>
+
+                    <ol>
+                        <li><strong>Логирование всех действий</strong> - записывается каждый просмотр объекта/отчёта</li>
+                        <li><strong>IP-ограничения</strong> (опционально) - доступ только из сети Правительства</li>
+                        <li><strong>Двухфакторная аутентификация</strong> - обязательна для этой роли</li>
+                        <li><strong>Автоматический выход</strong> - через 15 минут неактивности</li>
+                        <li><strong>Запрет на API-доступ</strong> - только через веб-интерфейс, нельзя использовать API напрямую</li>
+                        <li><strong>Водяные знаки на отчётах</strong> - PDF и Excel содержат ФИО пользователя и дату/время выгрузки</li>
+                    </ol>
+                </div>
+
+                <div class="success-box" style="margin-top: 40px; padding: 30px; text-align: center;">
+                    <h2 style="color: #28a745; margin-bottom: 15px;">✅ ВСЕ 8 ЭТАПОВ ЗАВЕРШЕНЫ</h2>
+                    <p style="font-size: 16px;">Техническое задание полностью документировано и готово к передаче разработчикам.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabs;
+
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+
+            tabs = document.getElementsByClassName("tab");
+            for (i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+
+</body></html>
