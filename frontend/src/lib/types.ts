@@ -17,6 +17,27 @@ export interface User {
   tenantId: string | null;
 }
 
+export interface UserObjectAssignment {
+  id: string;
+  userId: string;
+  objectId: string;
+  object: {
+    id: string;
+    name: string;
+    status: ObjectStatus;
+  };
+}
+
+export interface UserWithAssignments extends User {
+  phone?: string;
+  isActive: boolean;
+  createdAt: string;
+  objectAssignments?: UserObjectAssignment[];
+  _count?: {
+    objectAssignments: number;
+  };
+}
+
 export interface Contractor {
   id: string;
   tenantId: string;
@@ -24,6 +45,9 @@ export interface Contractor {
   inn?: string;
   phone?: string;
   email?: string;
+  _count?: {
+    objects: number;
+  };
 }
 
 export interface EquipmentType {
@@ -74,6 +98,7 @@ export interface ConstructionObject {
   status: ObjectStatus;
   contractor?: Contractor;
   stages?: Stage[];
+  progress?: number;
 }
 
 // Статусы для отображения
@@ -89,4 +114,14 @@ export const statusColors: Record<ObjectStatus, string> = {
   IN_PROGRESS: 'bg-blue-100 text-blue-700',
   COMPLETED: 'bg-green-100 text-green-700',
   SUSPENDED: 'bg-yellow-100 text-yellow-700',
+};
+
+export const roleLabels: Record<Role, string> = {
+  SUPERADMIN: 'Суперадмин',
+  GOVERNMENT: 'Правительство',
+  MINISTER: 'Министр',
+  ACCOUNTANT: 'Бухгалтер',
+  TECHNADZOR: 'Технадзор',
+  INSPECTOR: 'Проверяющий',
+  CONTRACTOR: 'Подрядчик',
 };

@@ -30,6 +30,8 @@ export class ObjectsService {
   }
 
   async findAll(tenantId: string, userId: string, userRole: Role) {
+    let whereClause: any = { tenantId };
+
     // Подрядчик видит только свои объекты
     if (userRole === Role.CONTRACTOR) {
       const assignments = await this.prisma.userObjectAssignment.findMany({
@@ -37,32 +39,38 @@ export class ObjectsService {
         select: { objectId: true },
       });
       const objectIds = assignments.map((a) => a.objectId);
-
-      return this.prisma.object.findMany({
-        where: {
-          tenantId,
-          id: { in: objectIds },
-        },
-        include: {
-          contractor: true,
-          stages: {
-            orderBy: { sortOrder: 'asc' },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      whereClause = { tenantId, id: { in: objectIds } };
     }
 
-    // Остальные роли видят все объекты тенанта
-    return this.prisma.object.findMany({
-      where: { tenantId },
+    const objects = await this.prisma.object.findMany({
+      where: whereClause,
       include: {
         contractor: true,
         stages: {
           orderBy: { sortOrder: 'asc' },
+          include: {
+            volumeChecks: {
+              orderBy: { date: 'desc' },
+              take: 1,
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    // Добавляем расчёт прогресса для каждого объекта
+    return objects.map((obj) => {
+      const stages = obj.stages;
+      let progress = 0;
+      if (stages.length > 0) {
+        const totalProgress = stages.reduce((sum, stage) => {
+          const lastCheck = stage.volumeChecks?.[0];
+          return sum + (lastCheck?.percent || 0);
+        }, 0);
+        progress = Math.round(totalProgress / stages.length);
+      }
+      return { ...obj, progress };
     });
   }
 

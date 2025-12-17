@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -8,7 +8,10 @@ import { Header } from '@/components/layout/header';
 import { objectsApi, stagesApi } from '@/lib/api';
 import { ConstructionObject, Stage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Calendar, Users, Truck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { StageFormDialog } from '@/components/stages/stage-form-dialog';
+import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
 
 // Генерируем даты для календаря (текущий месяц)
 function generateDates(start: Date, days: number) {
@@ -54,20 +57,18 @@ export default function ObjectDetailPage() {
   const [object, setObject] = useState<ConstructionObject | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
+  const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
+  const [editingStage, setEditingStage] = useState<Stage | null>(null);
 
   // Календарь: начало месяца и 31 день
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   const dates = generateDates(startOfMonth, 31);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
+  const loadData = useCallback(() => {
     if (user && id) {
+      setIsLoading(true);
       Promise.all([
         objectsApi.getOne(id as string),
         stagesApi.getByObject(id as string),
@@ -80,6 +81,26 @@ export default function ObjectDetailPage() {
         .finally(() => setIsLoading(false));
     }
   }, [user, id]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleAddStage = () => {
+    setEditingStage(null);
+    setIsStageDialogOpen(true);
+  };
+
+  const handleEditStage = (stage: Stage) => {
+    setEditingStage(stage);
+    setIsStageDialogOpen(true);
+  };
 
   if (authLoading || !user) {
     return (
@@ -128,17 +149,85 @@ export default function ObjectDetailPage() {
           </Link>
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{object.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-900">{object.name}</h2>
+                {canEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsObjectDialogOpen(true)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
               <p className="text-gray-500">{object.address || 'Адрес не указан'}</p>
             </div>
             {canEdit && (
-              <Button>
+              <Button onClick={handleAddStage}>
                 <Plus className="w-4 h-4 mr-2" />
                 Добавить этап
               </Button>
             )}
           </div>
         </div>
+
+        {/* Карточки статистики */}
+        {(() => {
+          // Расчёт прогресса и отставания
+          const totalProgress = stages.length > 0
+            ? Math.round(stages.reduce((sum, s) => sum + (s.volumeChecks?.[0]?.percent || 0), 0) / stages.length)
+            : 0;
+
+          // Расчёт планового прогресса на основе дат
+          const today = new Date();
+          let plannedProgress = 0;
+          if (stages.length > 0) {
+            const stageProgressList = stages.map((s) => {
+              if (!s.startDate || !s.endDate) return 0;
+              const start = new Date(s.startDate);
+              const end = new Date(s.endDate);
+              if (today < start) return 0;
+              if (today > end) return 100;
+              const total = end.getTime() - start.getTime();
+              const elapsed = today.getTime() - start.getTime();
+              return Math.round((elapsed / total) * 100);
+            });
+            plannedProgress = Math.round(stageProgressList.reduce((a, b) => a + b, 0) / stages.length);
+          }
+
+          const deviation = totalProgress - plannedProgress;
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">Общий прогресс</div>
+                <div className="text-3xl font-bold text-indigo-600">{totalProgress}%</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">План на сегодня</div>
+                <div className="text-3xl font-bold text-gray-700">{plannedProgress}%</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">Отклонение</div>
+                <div className={`text-3xl font-bold flex items-center gap-2 ${
+                  deviation > 0 ? 'text-green-600' : deviation < 0 ? 'text-red-600' : 'text-gray-600'
+                }`}>
+                  {deviation > 0 ? <TrendingUp className="w-6 h-6" /> : deviation < 0 ? <TrendingDown className="w-6 h-6" /> : <Minus className="w-6 h-6" />}
+                  {deviation > 0 ? '+' : ''}{deviation}%
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">Статус</div>
+                <Badge className={`text-base px-3 py-1 ${
+                  deviation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {deviation >= 0 ? 'Успеваем' : 'Отстаём'}
+                </Badge>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Таблица-календарь */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -202,11 +291,24 @@ export default function ObjectDetailPage() {
                       <tr key={stage.id} className="border-b hover:bg-gray-50">
                         {/* Название этапа */}
                         <td className="sticky left-0 bg-white z-10 px-4 py-3 border-r">
-                          <div className="font-medium text-gray-900">
-                            {stage.name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Выполнено: {progress}%
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {stage.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Выполнено: {progress}%
+                              </div>
+                            </div>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditStage(stage)}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                         {/* План/факт людей */}
@@ -274,6 +376,23 @@ export default function ObjectDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Диалог добавления/редактирования этапа */}
+      <StageFormDialog
+        open={isStageDialogOpen}
+        onOpenChange={setIsStageDialogOpen}
+        objectId={id as string}
+        stage={editingStage}
+        onSuccess={loadData}
+      />
+
+      {/* Диалог редактирования объекта */}
+      <ObjectFormDialog
+        open={isObjectDialogOpen}
+        onOpenChange={setIsObjectDialogOpen}
+        object={object}
+        onSuccess={loadData}
+      />
     </div>
   );
 }

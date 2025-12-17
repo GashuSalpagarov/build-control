@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -10,6 +10,7 @@ import { ConstructionObject } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
 
 function formatCurrency(amount: number | undefined | null): string {
   if (!amount) return '—';
@@ -21,7 +22,6 @@ function formatCurrency(amount: number | undefined | null): string {
 }
 
 function getStatusStyle(status: string) {
-  // Упрощённая логика статуса на основе прогресса
   if (status === 'PLANNED') {
     return { label: 'Запланировано', className: 'bg-gray-200 text-gray-700' };
   }
@@ -31,8 +31,6 @@ function getStatusStyle(status: string) {
   if (status === 'SUSPENDED') {
     return { label: 'Приостановлен', className: 'bg-yellow-500 text-white' };
   }
-  // IN_PROGRESS - показываем успеваем/не успеваем
-  // Пока показываем просто "В работе"
   return { label: 'В работе', className: 'bg-blue-500 text-white' };
 }
 
@@ -41,6 +39,18 @@ export default function ObjectsPage() {
   const router = useRouter();
   const [objects, setObjects] = useState<ConstructionObject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const loadObjects = useCallback(() => {
+    if (user) {
+      setIsLoading(true);
+      objectsApi
+        .getAll()
+        .then(setObjects)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -49,14 +59,8 @@ export default function ObjectsPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (user) {
-      objectsApi
-        .getAll()
-        .then(setObjects)
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    }
-  }, [user]);
+    loadObjects();
+  }, [loadObjects]);
 
   if (authLoading || !user) {
     return (
@@ -80,7 +84,7 @@ export default function ObjectsPage() {
             <p className="text-sm text-gray-500">2025 год</p>
           </div>
           {canCreate && (
-            <Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Добавить объект
             </Button>
@@ -106,7 +110,7 @@ export default function ObjectsPage() {
             </div>
           ) : (
             objects.map((obj, index) => {
-              const progress = 0; // TODO: получать из API
+              const progress = obj.progress ?? 0;
               const status = getStatusStyle(obj.status);
 
               return (
@@ -140,6 +144,12 @@ export default function ObjectsPage() {
           )}
         </div>
       </main>
+
+      <ObjectFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={loadObjects}
+      />
     </div>
   );
 }

@@ -6,6 +6,9 @@ import { FileStorageModule } from './file-storage/file-storage.module';
 import { ObjectsModule } from './objects/objects.module';
 import { StagesModule } from './stages/stages.module';
 import { EquipmentTypesModule } from './equipment-types/equipment-types.module';
+import { ContractorsModule } from './contractors/contractors.module';
+import { UsersModule } from './users/users.module';
+import { PlannedEquipmentModule } from './planned-equipment/planned-equipment.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { EquipmentTypesModule } from './equipment-types/equipment-types.module';
     ObjectsModule,
     StagesModule,
     EquipmentTypesModule,
+    ContractorsModule,
+    UsersModule,
+    PlannedEquipmentModule,
   ],
   controllers: [],
   providers: [],

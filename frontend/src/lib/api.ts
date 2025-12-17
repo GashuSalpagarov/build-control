@@ -114,7 +114,7 @@ export const authApi = {
 };
 
 // Objects API
-import type { ConstructionObject, Stage, EquipmentType } from './types';
+import type { ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment, UserWithAssignments } from './types';
 
 export interface CreateObjectDto {
   name: string;
@@ -166,4 +166,65 @@ export const equipmentTypesApi = {
   update: (id: string, name: string) =>
     api.patch<EquipmentType>(`/equipment-types/${id}`, { name }),
   delete: (id: string) => api.delete(`/equipment-types/${id}`),
+};
+
+// Contractors API
+export interface CreateContractorDto {
+  name: string;
+  inn?: string;
+  phone?: string;
+  email?: string;
+}
+
+export const contractorsApi = {
+  getAll: () => api.get<Contractor[]>('/contractors'),
+  getOne: (id: string) => api.get<Contractor>(`/contractors/${id}`),
+  create: (data: CreateContractorDto) => api.post<Contractor>('/contractors', data),
+  update: (id: string, data: Partial<CreateContractorDto>) =>
+    api.patch<Contractor>(`/contractors/${id}`, data),
+  delete: (id: string) => api.delete(`/contractors/${id}`),
+};
+
+// Users API
+export interface CreateUserDto {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  role: string;
+}
+
+export interface UpdateUserDto {
+  email?: string;
+  password?: string;
+  name?: string;
+  phone?: string;
+  role?: string;
+  isActive?: boolean;
+}
+
+export const usersApi = {
+  getAll: () => api.get<UserWithAssignments[]>('/users'),
+  getOne: (id: string) => api.get<UserWithAssignments>(`/users/${id}`),
+  create: (data: CreateUserDto) => api.post<UserWithAssignments>('/users', data),
+  update: (id: string, data: UpdateUserDto) =>
+    api.patch<UserWithAssignments>(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+  assignObjects: (id: string, objectIds: string[]) =>
+    api.patch<UserWithAssignments>(`/users/${id}/objects`, { objectIds }),
+  getAssignedObjects: (id: string) =>
+    api.get<ConstructionObject[]>(`/users/${id}/objects`),
+};
+
+// Planned Equipment API
+export interface SetStageEquipmentDto {
+  equipment: { equipmentTypeId: string; quantity: number }[];
+}
+
+export const plannedEquipmentApi = {
+  getByStage: (stageId: string) =>
+    api.get<PlannedEquipment[]>(`/planned-equipment/stage/${stageId}`),
+  setStageEquipment: (stageId: string, data: SetStageEquipmentDto) =>
+    api.post<PlannedEquipment[]>(`/planned-equipment/stage/${stageId}`, data),
+  delete: (id: string) => api.delete(`/planned-equipment/${id}`),
 };
