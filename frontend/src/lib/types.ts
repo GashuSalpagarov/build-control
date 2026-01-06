@@ -335,3 +335,44 @@ export const appealTypeColors: Record<AppealType, string> = {
   PROBLEM: 'bg-red-100 text-red-700',
   SUGGESTION: 'bg-purple-100 text-purple-700',
 };
+
+// Дашборд
+export interface DashboardSummary {
+  totalObjects: number;
+  plannedObjects: number;
+  inProgressObjects: number;
+  completedObjects: number;
+  suspendedObjects: number;
+  problemObjects: number;
+  averageProgress: number;
+  totalBudget: number;
+  totalPaid: number;
+  budgetUtilization: number;
+}
+
+export interface DashboardObject {
+  id: string;
+  name: string;
+  status: ObjectStatus;
+  contractor: string | null;
+  budget: number;
+  progress: number;
+  plannedProgress: number;
+  deviation: number;
+  paid: number;
+  stagesCount: number;
+  completedStages: number;
+}
+
+export interface DashboardContractor {
+  id: string;
+  name: string;
+  objectsCount: number;
+}
+
+export interface DashboardStats {
+  summary: DashboardSummary;
+  objects: DashboardObject[];
+  contractors: DashboardContractor[];
+  appeals: AppealStats;
+}

@@ -119,7 +119,8 @@ import type {
   UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto,
   Payment, CreatePaymentDto, PaymentObjectSummary,
   VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary,
-  Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus
+  Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus,
+  DashboardStats
 } from './types';
 
 export interface CreateObjectDto {
@@ -140,6 +141,7 @@ export const objectsApi = {
     api.patch<ConstructionObject>(`/objects/${id}`, data),
   delete: (id: string) => api.delete(`/objects/${id}`),
   getProgress: (id: string) => api.get<number>(`/objects/${id}/progress`),
+  getDashboardStats: () => api.get<DashboardStats>('/objects/dashboard/stats'),
 };
 
 // Stages API

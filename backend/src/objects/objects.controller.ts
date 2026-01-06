@@ -40,6 +40,12 @@ export class ObjectsController {
     return this.objectsService.findAll(tenantId, userId, userRole);
   }
 
+  @Get('dashboard/stats')
+  @Roles(Role.MINISTER, Role.GOVERNMENT, Role.SUPERADMIN)
+  getDashboardStats(@CurrentUser('tenantId') tenantId: string) {
+    return this.objectsService.getDashboardStats(tenantId);
+  }
+
   @Get(':id')
   findOne(
     @Param('id') id: string,

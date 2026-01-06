@@ -159,4 +159,179 @@ export class ObjectsService {
 
     return Math.round(totalProgress / stages.length);
   }
+
+  // Статистика для дашборда
+  async getDashboardStats(tenantId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Получаем все объекты с этапами и проверками
+    const objects = await this.prisma.object.findMany({
+      where: { tenantId },
+      include: {
+        contractor: true,
+        stages: {
+          include: {
+            volumeChecks: {
+              orderBy: { date: 'desc' },
+              take: 1,
+            },
+            payments: true,
+          },
+        },
+      },
+    });
+
+    // Подсчёт статистики
+    let totalObjects = objects.length;
+    let plannedObjects = 0;
+    let inProgressObjects = 0;
+    let completedObjects = 0;
+    let suspendedObjects = 0;
+    let problemObjects = 0; // Объекты с отставанием > 10%
+
+    let totalBudget = 0;
+    let totalPaid = 0;
+    let averageProgress = 0;
+
+    const objectsWithProgress: any[] = [];
+
+    for (const obj of objects) {
+      // Статус
+      switch (obj.status) {
+        case 'PLANNED':
+          plannedObjects++;
+          break;
+        case 'IN_PROGRESS':
+          inProgressObjects++;
+          break;
+        case 'COMPLETED':
+          completedObjects++;
+          break;
+        case 'SUSPENDED':
+          suspendedObjects++;
+          break;
+      }
+
+      // Бюджет
+      if (obj.budget) {
+        totalBudget += Number(obj.budget);
+      }
+
+      // Расчёт прогресса и отставания
+      const stages = obj.stages;
+      let progress = 0;
+      let plannedProgress = 0;
+      let stageBudget = 0;
+      let stagePaid = 0;
+
+      if (stages.length > 0) {
+        for (const stage of stages) {
+          // Прогресс
+          const lastCheck = stage.volumeChecks?.[0];
+          progress += lastCheck?.percent || 0;
+
+          // Плановый прогресс на основе дат
+          if (stage.startDate && stage.endDate) {
+            const start = new Date(stage.startDate);
+            const end = new Date(stage.endDate);
+            if (today < start) {
+              plannedProgress += 0;
+            } else if (today > end) {
+              plannedProgress += 100;
+            } else {
+              const total = end.getTime() - start.getTime();
+              const elapsed = today.getTime() - start.getTime();
+              plannedProgress += Math.round((elapsed / total) * 100);
+            }
+          }
+
+          // Финансы по этапам
+          if (stage.budget) {
+            stageBudget += Number(stage.budget);
+          }
+          for (const payment of stage.payments) {
+            stagePaid += Number(payment.amount);
+          }
+        }
+
+        progress = Math.round(progress / stages.length);
+        plannedProgress = Math.round(plannedProgress / stages.length);
+      }
+
+      const deviation = progress - plannedProgress;
+
+      // Проблемный объект если отставание > 10%
+      if (deviation < -10 && obj.status === 'IN_PROGRESS') {
+        problemObjects++;
+      }
+
+      totalPaid += stagePaid;
+      averageProgress += progress;
+
+      objectsWithProgress.push({
+        id: obj.id,
+        name: obj.name,
+        status: obj.status,
+        contractor: obj.contractor?.name || null,
+        budget: obj.budget ? Number(obj.budget) : 0,
+        progress,
+        plannedProgress,
+        deviation,
+        paid: stagePaid,
+        stagesCount: stages.length,
+        completedStages: stages.filter(s => (s.volumeChecks?.[0]?.percent || 0) >= 100).length,
+      });
+    }
+
+    if (totalObjects > 0) {
+      averageProgress = Math.round(averageProgress / totalObjects);
+    }
+
+    // Статистика по подрядчикам
+    const contractors = await this.prisma.contractor.findMany({
+      where: { tenantId },
+      include: {
+        _count: { select: { objects: true } },
+      },
+    });
+
+    const contractorStats = contractors.map(c => ({
+      id: c.id,
+      name: c.name,
+      objectsCount: c._count.objects,
+    }));
+
+    // Статистика по обращениям
+    const appealStats = await this.prisma.appeal.groupBy({
+      by: ['status'],
+      where: { object: { tenantId } },
+      _count: true,
+    });
+
+    const appeals = {
+      total: appealStats.reduce((sum, a) => sum + a._count, 0),
+      new: appealStats.find(a => a.status === 'NEW')?._count || 0,
+      inProgress: appealStats.find(a => a.status === 'IN_PROGRESS')?._count || 0,
+      resolved: appealStats.find(a => a.status === 'RESOLVED')?._count || 0,
+    };
+
+    return {
+      summary: {
+        totalObjects,
+        plannedObjects,
+        inProgressObjects,
+        completedObjects,
+        suspendedObjects,
+        problemObjects,
+        averageProgress,
+        totalBudget,
+        totalPaid,
+        budgetUtilization: totalBudget > 0 ? Math.round((totalPaid / totalBudget) * 100) : 0,
+      },
+      objects: objectsWithProgress,
+      contractors: contractorStats,
+      appeals,
+    };
+  }
 }
