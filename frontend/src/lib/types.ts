@@ -122,6 +122,79 @@ export interface UpdateResourceCheckDto {
   }[];
 }
 
+// Платежи
+export interface Payment {
+  id: string;
+  stageId: string;
+  userId: string;
+  date: string;
+  amount: number;
+  comment?: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  stage: {
+    id: string;
+    name: string;
+    budget?: number;
+    objectId?: string;
+  };
+}
+
+export interface CreatePaymentDto {
+  stageId: string;
+  date: string;
+  amount: number;
+  comment?: string;
+}
+
+export interface PaymentStageSummary {
+  stageId: string;
+  stageName: string;
+  budget: number;
+  paid: number;
+  remaining: number;
+  paymentsCount: number;
+  percentPaid: number;
+}
+
+export interface PaymentObjectSummary {
+  objectId: string;
+  objectName: string;
+  totalBudget: number;
+  totalPaid: number;
+  totalRemaining: number;
+  totalPaymentsCount: number;
+  percentPaid: number;
+  stages: PaymentStageSummary[];
+}
+
+// Проверки объёмов
+export interface CreateVolumeCheckDto {
+  stageId: string;
+  date: string;
+  percent: number;
+  comment?: string;
+}
+
+export interface VolumeCheckStageSummary {
+  stageId: string;
+  stageName: string;
+  percent: number;
+  lastCheckDate?: string;
+  checksCount: number;
+}
+
+export interface VolumeCheckObjectSummary {
+  objectId: string;
+  objectName: string;
+  averageProgress: number;
+  stages: VolumeCheckStageSummary[];
+}
+
 export interface Stage {
   id: string;
   objectId: string;

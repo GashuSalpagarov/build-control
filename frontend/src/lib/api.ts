@@ -114,7 +114,12 @@ export const authApi = {
 };
 
 // Objects API
-import type { ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment, UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto } from './types';
+import type {
+  ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment,
+  UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto,
+  Payment, CreatePaymentDto, PaymentObjectSummary,
+  VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary
+} from './types';
 
 export interface CreateObjectDto {
   name: string;
@@ -260,4 +265,56 @@ export const resourceChecksApi = {
 
   // Удалить проверку (только сегодняшнюю)
   delete: (id: string) => api.delete(`/resource-checks/${id}`),
+};
+
+// Payments API (платежи)
+export const paymentsApi = {
+  // Получить список платежей
+  getAll: (params?: { stageId?: string; objectId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.stageId) queryParams.append('stageId', params.stageId);
+    if (params?.objectId) queryParams.append('objectId', params.objectId);
+    const query = queryParams.toString();
+    return api.get<Payment[]>(`/payments${query ? `?${query}` : ''}`);
+  },
+
+  // Получить один платёж
+  getOne: (id: string) => api.get<Payment>(`/payments/${id}`),
+
+  // Создать платёж
+  create: (data: CreatePaymentDto) => api.post<Payment>('/payments', data),
+
+  // Сводка по объекту
+  getSummaryByObject: (objectId: string) =>
+    api.get<PaymentObjectSummary>(`/payments/summary/object/${objectId}`),
+
+  // Сводка по этапу
+  getSummaryByStage: (stageId: string) =>
+    api.get<PaymentObjectSummary>(`/payments/summary/stage/${stageId}`),
+};
+
+// Volume Checks API (проверки объёмов)
+export const volumeChecksApi = {
+  // Получить список проверок
+  getAll: (params?: { stageId?: string; objectId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.stageId) queryParams.append('stageId', params.stageId);
+    if (params?.objectId) queryParams.append('objectId', params.objectId);
+    const query = queryParams.toString();
+    return api.get<VolumeCheck[]>(`/volume-checks${query ? `?${query}` : ''}`);
+  },
+
+  // Получить одну проверку
+  getOne: (id: string) => api.get<VolumeCheck>(`/volume-checks/${id}`),
+
+  // Создать проверку
+  create: (data: CreateVolumeCheckDto) => api.post<VolumeCheck>('/volume-checks', data),
+
+  // Сводка по объекту
+  getSummaryByObject: (objectId: string) =>
+    api.get<VolumeCheckObjectSummary>(`/volume-checks/summary/object/${objectId}`),
+
+  // Получить последнюю проверку по этапу
+  getLatestByStage: (stageId: string) =>
+    api.get<VolumeCheck | null>(`/volume-checks/latest/stage/${stageId}`),
 };

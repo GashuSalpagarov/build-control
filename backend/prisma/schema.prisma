@@ -121,6 +121,7 @@ model Object {
   startDate    DateTime?
   endDate      DateTime?
   budget       Decimal?     @db.Decimal(15, 2)
+  progress     Int          @default(0) // Процент выполнения 0-100
   status       ObjectStatus @default(PLANNED)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt

@@ -10,6 +10,8 @@ import { ContractorsModule } from './contractors/contractors.module';
 import { UsersModule } from './users/users.module';
 import { PlannedEquipmentModule } from './planned-equipment/planned-equipment.module';
 import { ResourceChecksModule } from './resource-checks/resource-checks.module';
+import { PaymentsModule } from './payments/payments.module';
+import { VolumeChecksModule } from './volume-checks/volume-checks.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { ResourceChecksModule } from './resource-checks/resource-checks.module';
     UsersModule,
     PlannedEquipmentModule,
     ResourceChecksModule,
+    PaymentsModule,
+    VolumeChecksModule,
   ],
   controllers: [],
   providers: [],
