@@ -12,6 +12,7 @@ import { PlannedEquipmentModule } from './planned-equipment/planned-equipment.mo
 import { ResourceChecksModule } from './resource-checks/resource-checks.module';
 import { PaymentsModule } from './payments/payments.module';
 import { VolumeChecksModule } from './volume-checks/volume-checks.module';
+import { AppealsModule } from './appeals/appeals.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { VolumeChecksModule } from './volume-checks/volume-checks.module';
     ResourceChecksModule,
     PaymentsModule,
     VolumeChecksModule,
+    AppealsModule,
   ],
   controllers: [],
   providers: [],

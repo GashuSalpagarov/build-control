@@ -247,3 +247,91 @@ export const roleLabels: Record<Role, string> = {
   INSPECTOR: 'Проверяющий',
   CONTRACTOR: 'Подрядчик',
 };
+
+// Обращения
+export type AppealStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
+export type AppealType = 'QUESTION' | 'PROBLEM' | 'SUGGESTION';
+
+export interface AppealMessage {
+  id: string;
+  appealId: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface Appeal {
+  id: string;
+  objectId: string;
+  stageId?: string;
+  userId: string;
+  type: AppealType;
+  subject: string;
+  description?: string;
+  status: AppealStatus;
+  createdAt: string;
+  updatedAt: string;
+  object: {
+    id: string;
+    name: string;
+  };
+  stage?: {
+    id: string;
+    name: string;
+  };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  messages?: AppealMessage[];
+  _count?: {
+    messages: number;
+  };
+}
+
+export interface CreateAppealDto {
+  objectId: string;
+  stageId?: string;
+  type: AppealType;
+  subject: string;
+  description?: string;
+}
+
+export interface AppealStats {
+  total: number;
+  new: number;
+  inProgress: number;
+  resolved: number;
+}
+
+export const appealStatusLabels: Record<AppealStatus, string> = {
+  NEW: 'Новое',
+  IN_PROGRESS: 'В работе',
+  RESOLVED: 'Решено',
+  REJECTED: 'Отклонено',
+};
+
+export const appealStatusColors: Record<AppealStatus, string> = {
+  NEW: 'bg-blue-100 text-blue-700',
+  IN_PROGRESS: 'bg-yellow-100 text-yellow-700',
+  RESOLVED: 'bg-green-100 text-green-700',
+  REJECTED: 'bg-red-100 text-red-700',
+};
+
+export const appealTypeLabels: Record<AppealType, string> = {
+  QUESTION: 'Вопрос',
+  PROBLEM: 'Проблема',
+  SUGGESTION: 'Предложение',
+};
+
+export const appealTypeColors: Record<AppealType, string> = {
+  QUESTION: 'bg-blue-100 text-blue-700',
+  PROBLEM: 'bg-red-100 text-red-700',
+  SUGGESTION: 'bg-purple-100 text-purple-700',
+};

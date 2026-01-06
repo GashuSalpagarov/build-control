@@ -118,7 +118,8 @@ import type {
   ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment,
   UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto,
   Payment, CreatePaymentDto, PaymentObjectSummary,
-  VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary
+  VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary,
+  Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus
 } from './types';
 
 export interface CreateObjectDto {
@@ -317,4 +318,38 @@ export const volumeChecksApi = {
   // Получить последнюю проверку по этапу
   getLatestByStage: (stageId: string) =>
     api.get<VolumeCheck | null>(`/volume-checks/latest/stage/${stageId}`),
+};
+
+// Appeals API (обращения)
+export const appealsApi = {
+  // Получить список обращений
+  getAll: (params?: { objectId?: string; status?: AppealStatus; my?: boolean }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.objectId) queryParams.append('objectId', params.objectId);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.my) queryParams.append('my', 'true');
+    const query = queryParams.toString();
+    return api.get<Appeal[]>(`/appeals${query ? `?${query}` : ''}`);
+  },
+
+  // Получить одно обращение
+  getOne: (id: string) => api.get<Appeal>(`/appeals/${id}`),
+
+  // Создать обращение
+  create: (data: CreateAppealDto) => api.post<Appeal>('/appeals', data),
+
+  // Изменить статус
+  updateStatus: (id: string, status: AppealStatus) =>
+    api.patch<Appeal>(`/appeals/${id}/status`, { status }),
+
+  // Добавить сообщение
+  addMessage: (appealId: string, text: string) =>
+    api.post<AppealMessage>(`/appeals/${appealId}/messages`, { text }),
+
+  // Получить сообщения
+  getMessages: (appealId: string) =>
+    api.get<AppealMessage[]>(`/appeals/${appealId}/messages`),
+
+  // Статистика
+  getStats: () => api.get<AppealStats>('/appeals/stats'),
 };
