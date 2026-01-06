@@ -5,8 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Header } from '@/components/layout/header';
-import { objectsApi, stagesApi, resourceChecksApi } from '@/lib/api';
-import { ConstructionObject, Stage, ResourceCheck } from '@/lib/types';
+import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi } from '@/lib/api';
+import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -162,6 +162,8 @@ export default function ObjectDetailPage() {
   const [object, setObject] = useState<ConstructionObject | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
   const [resourceChecks, setResourceChecks] = useState<ResourceCheck[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<PaymentObjectSummary | null>(null);
+  const [volumeSummary, setVolumeSummary] = useState<VolumeCheckObjectSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
   const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
@@ -192,11 +194,15 @@ export default function ObjectDetailPage() {
           startDate.toISOString().split('T')[0],
           endDate.toISOString().split('T')[0]
         ),
+        paymentsApi.getSummaryByObject(id as string).catch(() => null),
+        volumeChecksApi.getSummaryByObject(id as string).catch(() => null),
       ])
-        .then(([obj, stg, checks]) => {
+        .then(([obj, stg, checks, paySummary, volSummary]) => {
           setObject(obj);
           setStages(stg);
           setResourceChecks(checks);
+          setPaymentSummary(paySummary);
+          setVolumeSummary(volSummary);
         })
         .catch(console.error)
         .finally(() => setIsLoading(false));
@@ -322,8 +328,11 @@ export default function ObjectDetailPage() {
           // Подсчёт завершённых этапов (прогресс >= 100%)
           const completedStages = stages.filter((s) => (s.volumeChecks?.[0]?.percent || 0) >= 100).length;
 
+          // Освоено средств из paymentSummary
+          const financialPercent = paymentSummary?.percentPaid || 0;
+
           return (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="text-sm text-gray-500 mb-1">Общий прогресс</div>
                 <div className="text-3xl font-bold text-indigo-600">{totalProgress}%</div>
@@ -345,6 +354,14 @@ export default function ObjectDetailPage() {
                 }`}>
                   {deviation > 0 ? <TrendingUp className="w-6 h-6" /> : deviation < 0 ? <TrendingDown className="w-6 h-6" /> : <Minus className="w-6 h-6" />}
                   {deviation > 0 ? '+' : ''}{deviation}%
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">Освоено средств</div>
+                <div className={`text-3xl font-bold ${
+                  financialPercent >= 80 ? 'text-green-600' : financialPercent >= 50 ? 'text-blue-600' : 'text-gray-600'
+                }`}>
+                  {financialPercent}%
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm p-4">
@@ -473,6 +490,39 @@ export default function ObjectDetailPage() {
                                     {progress}%
                                   </span>
                                 </div>
+                              </div>
+                              {/* Бейджи Объём и Финансы */}
+                              <div className="mt-1 flex gap-1 flex-wrap">
+                                {(() => {
+                                  const volStage = volumeSummary?.stages.find(s => s.stageId === stage.id);
+                                  const payStage = paymentSummary?.stages.find(s => s.stageId === stage.id);
+                                  return (
+                                    <>
+                                      {volStage && (
+                                        <Badge className={`text-[10px] px-1.5 py-0 ${
+                                          volStage.percent >= 100
+                                            ? 'bg-green-100 text-green-700'
+                                            : volStage.percent >= 50
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-red-100 text-red-700'
+                                        }`}>
+                                          Объём: {volStage.percent}%
+                                        </Badge>
+                                      )}
+                                      {payStage && (
+                                        <Badge className={`text-[10px] px-1.5 py-0 ${
+                                          payStage.percentPaid >= 100
+                                            ? 'bg-green-100 text-green-700'
+                                            : payStage.percentPaid >= 50
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-gray-100 text-gray-700'
+                                        }`}>
+                                          Финансы: {payStage.percentPaid}%
+                                        </Badge>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                             {canEdit && (

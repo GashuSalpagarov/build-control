@@ -14,10 +14,14 @@ export function Header() {
   const canManageUsers = user && ['MINISTER', 'SUPERADMIN'].includes(user.role);
   const canManageContractors = user && ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
   const canInspect = user && ['INSPECTOR', 'TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canManagePayments = user && ['ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canCheckVolumes = user && ['TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
 
   const navItems = [
     { href: '/objects', label: 'Объекты', show: true },
     { href: '/inspector', label: 'Проверки', show: canInspect },
+    { href: '/volumes', label: 'Объёмы', show: canCheckVolumes },
+    { href: '/accountant', label: 'Платежи', show: canManagePayments },
     { href: '/contractors', label: 'Подрядчики', show: canManageContractors },
     { href: '/users', label: 'Пользователи', show: canManageUsers },
     { href: '/equipment-types', label: 'Техника', show: canManageContractors },
