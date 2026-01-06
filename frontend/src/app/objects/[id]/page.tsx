@@ -13,6 +13,16 @@ import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDo
 import { StageFormDialog } from '@/components/stages/stage-form-dialog';
 import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
 
+type CalendarScale = 'days' | 'weeks' | 'decades' | 'months';
+
+interface CalendarPeriod {
+  label: string;
+  subLabel?: string;
+  dates: Date[];
+  isWeekend?: boolean;
+  isToday?: boolean;
+}
+
 // Генерируем даты для календаря (текущий месяц)
 function generateDates(start: Date, days: number) {
   const dates: Date[] = [];
@@ -50,6 +60,101 @@ function isInRange(date: Date, start?: string, end?: string) {
   return d >= s && d <= e;
 }
 
+function getWeekNumber(date: Date): number {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+}
+
+function getDecade(date: Date): number {
+  const day = date.getDate();
+  if (day <= 10) return 1;
+  if (day <= 20) return 2;
+  return 3;
+}
+
+function groupDatesByScale(dates: Date[], scale: CalendarScale): CalendarPeriod[] {
+  if (scale === 'days') {
+    return dates.map((date) => ({
+      label: formatDate(date),
+      subLabel: formatDayOfWeek(date),
+      dates: [date],
+      isWeekend: isWeekend(date),
+      isToday: isToday(date),
+    }));
+  }
+
+  if (scale === 'weeks') {
+    const groups = new Map<string, Date[]>();
+    dates.forEach((date) => {
+      const year = date.getFullYear();
+      const week = getWeekNumber(date);
+      const key = `${year}-W${week}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(date);
+    });
+    return Array.from(groups.entries()).map(([key, groupDates]) => ({
+      label: `Нед ${key.split('-W')[1]}`,
+      subLabel: `${formatDate(groupDates[0])}-${formatDate(groupDates[groupDates.length - 1])}`,
+      dates: groupDates,
+      isToday: groupDates.some(isToday),
+    }));
+  }
+
+  if (scale === 'decades') {
+    const groups = new Map<string, Date[]>();
+    dates.forEach((date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const decade = getDecade(date);
+      const key = `${year}-${month}-D${decade}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(date);
+    });
+    return Array.from(groups.entries()).map(([key, groupDates]) => {
+      const decade = key.split('-D')[1];
+      const monthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      const month = groupDates[0].getMonth();
+      return {
+        label: `${decade} дек`,
+        subLabel: monthNames[month],
+        dates: groupDates,
+        isToday: groupDates.some(isToday),
+      };
+    });
+  }
+
+  // months
+  const groups = new Map<string, Date[]>();
+  dates.forEach((date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const key = `${year}-${month}`;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(date);
+  });
+  return Array.from(groups.entries()).map(([, groupDates]) => {
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    const month = groupDates[0].getMonth();
+    return {
+      label: monthNames[month],
+      subLabel: `${groupDates[0].getFullYear()}`,
+      dates: groupDates,
+      isToday: groupDates.some(isToday),
+    };
+  });
+}
+
+function isPeriodInRange(period: CalendarPeriod, start?: string, end?: string): boolean {
+  return period.dates.some((date) => isInRange(date, start, end));
+}
+
 export default function ObjectDetailPage() {
   const { id } = useParams();
   const { user, isLoading: authLoading } = useAuth();
@@ -60,11 +165,13 @@ export default function ObjectDetailPage() {
   const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
   const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
+  const [calendarScale, setCalendarScale] = useState<CalendarScale>('days');
 
-  // Календарь: начало месяца и 31 день
+  // Календарь: начало месяца и 62 дня (2 месяца для лучшего обзора)
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
-  const dates = generateDates(startOfMonth, 31);
+  const dates = generateDates(startOfMonth, 62);
+  const periods = groupDatesByScale(dates, calendarScale);
 
   const loadData = useCallback(() => {
     if (user && id) {
@@ -198,11 +305,20 @@ export default function ObjectDetailPage() {
 
           const deviation = totalProgress - plannedProgress;
 
+          // Подсчёт завершённых этапов (прогресс >= 100%)
+          const completedStages = stages.filter((s) => (s.volumeChecks?.[0]?.percent || 0) >= 100).length;
+
           return (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="text-sm text-gray-500 mb-1">Общий прогресс</div>
                 <div className="text-3xl font-bold text-indigo-600">{totalProgress}%</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="text-sm text-gray-500 mb-1">Завершено этапов</div>
+                <div className="text-3xl font-bold text-gray-700">
+                  {completedStages}/{stages.length}
+                </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="text-sm text-gray-500 mb-1">План на сегодня</div>
@@ -220,9 +336,9 @@ export default function ObjectDetailPage() {
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="text-sm text-gray-500 mb-1">Статус</div>
                 <Badge className={`text-base px-3 py-1 ${
-                  deviation >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  deviation >= 0 ? 'bg-[#4CAF50] text-white' : deviation >= -10 ? 'bg-[#FF9800] text-white' : 'bg-[#F44336] text-white'
                 }`}>
-                  {deviation >= 0 ? 'Успеваем' : 'Отстаём'}
+                  {deviation >= 0 ? (deviation > 0 ? `Опережаем: +${deviation}%` : 'Успеваем') : deviation >= -10 ? `Отстаём: ${deviation}%` : `Не успеваем: ${deviation}%`}
                 </Badge>
               </div>
             </div>
@@ -231,6 +347,30 @@ export default function ObjectDetailPage() {
 
         {/* Таблица-календарь */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {/* Кнопки масштаба */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
+            <span className="text-sm text-gray-500 mr-2">Масштаб:</span>
+            <div className="flex rounded-lg border bg-white overflow-hidden">
+              {[
+                { value: 'days', label: 'По дням' },
+                { value: 'weeks', label: 'По неделям' },
+                { value: 'decades', label: 'По декадам' },
+                { value: 'months', label: 'По месяцам' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setCalendarScale(option.value as CalendarScale)}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    calendarScale === option.value
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[1200px]">
               <thead>
@@ -254,22 +394,26 @@ export default function ObjectDetailPage() {
                       Техника
                     </div>
                   </th>
-                  {dates.map((date, i) => (
+                  {periods.map((period, i) => (
                     <th
                       key={i}
-                      className={`px-1 py-2 text-center min-w-[40px] ${
-                        isWeekend(date) ? 'bg-gray-100' : ''
-                      } ${isToday(date) ? 'bg-indigo-100' : ''}`}
+                      className={`px-1 py-2 text-center ${
+                        calendarScale === 'days' ? 'min-w-[40px]' : 'min-w-[60px]'
+                      } ${period.isWeekend ? 'bg-gray-100' : ''} ${
+                        period.isToday ? 'bg-indigo-100' : ''
+                      }`}
                     >
-                      <div className="text-xs font-medium text-gray-500">
-                        {formatDayOfWeek(date)}
-                      </div>
+                      {period.subLabel && (
+                        <div className="text-xs font-medium text-gray-500">
+                          {period.subLabel}
+                        </div>
+                      )}
                       <div
                         className={`text-sm font-semibold ${
-                          isToday(date) ? 'text-indigo-600' : 'text-gray-700'
+                          period.isToday ? 'text-indigo-600' : 'text-gray-700'
                         }`}
                       >
-                        {formatDate(date)}
+                        {period.label}
                       </div>
                     </th>
                   ))}
@@ -278,7 +422,7 @@ export default function ObjectDetailPage() {
               <tbody>
                 {stages.length === 0 ? (
                   <tr>
-                    <td colSpan={3 + dates.length} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={3 + periods.length} className="px-4 py-8 text-center text-gray-500">
                       Этапы работ не добавлены
                     </td>
                   </tr>
@@ -292,12 +436,29 @@ export default function ObjectDetailPage() {
                         {/* Название этапа */}
                         <td className="sticky left-0 bg-white z-10 px-4 py-3 border-r">
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1 min-w-0 mr-2">
                               <div className="font-medium text-gray-900">
                                 {stage.name}
                               </div>
-                              <div className="text-xs text-gray-500">
-                                Выполнено: {progress}%
+                              {/* Прогресс-бар с процентом внутри */}
+                              <div className="mt-1 relative h-5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    progress >= 80
+                                      ? 'bg-gradient-to-r from-green-400 to-green-500'
+                                      : progress >= 50
+                                      ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                                      : progress >= 20
+                                      ? 'bg-gradient-to-r from-orange-400 to-orange-500'
+                                      : 'bg-gradient-to-r from-red-400 to-red-500'
+                                  }`}
+                                  style={{ width: `${Math.max(progress, 0)}%` }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className={`text-xs font-semibold ${progress >= 50 ? 'text-white' : 'text-gray-700'}`}>
+                                    {progress}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             {canEdit && (
@@ -336,17 +497,38 @@ export default function ObjectDetailPage() {
                           </div>
                         </td>
                         {/* Ячейки календаря */}
-                        {dates.map((date, i) => {
-                          const inRange = isInRange(date, stage.startDate, stage.endDate);
+                        {periods.map((period, i) => {
+                          const inRange = isPeriodInRange(period, stage.startDate, stage.endDate);
+                          const plannedPeople = stage.plannedPeople || 0;
+                          const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
+                          // Факт пока не реализован (появится в Фазе 2)
+                          const actualPeople = null;
+                          const actualEquipment = null;
+
                           return (
                             <td
                               key={i}
-                              className={`px-1 py-2 text-center ${
-                                isWeekend(date) ? 'bg-gray-50' : ''
-                              } ${isToday(date) ? 'bg-indigo-50' : ''}`}
+                              className={`px-1 py-1 text-center align-top ${
+                                period.isWeekend ? 'bg-gray-50' : ''
+                              } ${period.isToday ? 'bg-indigo-50' : ''}`}
                             >
                               {inRange && (
-                                <div className="w-full h-6 bg-indigo-500 rounded-sm" />
+                                <div className="min-h-[50px] bg-indigo-100 rounded-sm p-1 border border-indigo-200">
+                                  <div className="text-[10px] leading-tight">
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-500">Л:</span>
+                                      <span className={actualPeople === null ? 'text-gray-400' : actualPeople >= plannedPeople ? 'text-green-600' : 'text-red-600'}>
+                                        {actualPeople ?? '—'}/{plannedPeople}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-500">Т:</span>
+                                      <span className={actualEquipment === null ? 'text-gray-400' : actualEquipment >= plannedEquipment ? 'text-green-600' : 'text-red-600'}>
+                                        {actualEquipment ?? '—'}/{plannedEquipment}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                             </td>
                           );

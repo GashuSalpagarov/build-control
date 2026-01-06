@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { stagesApi, equipmentTypesApi, plannedEquipmentApi } from '@/lib/api';
-import { Stage, EquipmentType, PlannedEquipment } from '@/lib/types';
+import { Stage, EquipmentType } from '@/lib/types';
 import { Plus, Trash2 } from 'lucide-react';
 
 const stageSchema = z.object({

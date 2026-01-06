@@ -21,17 +21,62 @@ function formatCurrency(amount: number | undefined | null): string {
   }).format(amount);
 }
 
-function getStatusStyle(status: string) {
+function calculateDeviation(obj: ConstructionObject): number | null {
+  if (obj.status === 'PLANNED' || obj.status === 'COMPLETED' || obj.status === 'SUSPENDED') {
+    return null;
+  }
+  if (!obj.startDate || !obj.endDate) {
+    return null;
+  }
+
+  const today = new Date();
+  const start = new Date(obj.startDate);
+  const end = new Date(obj.endDate);
+
+  if (today < start) return null;
+  if (today > end) {
+    // После окончания: отклонение = прогресс - 100
+    return (obj.progress ?? 0) - 100;
+  }
+
+  // Плановый прогресс по датам
+  const total = end.getTime() - start.getTime();
+  const elapsed = today.getTime() - start.getTime();
+  const plannedProgress = Math.round((elapsed / total) * 100);
+
+  // Отклонение = факт - план
+  return (obj.progress ?? 0) - plannedProgress;
+}
+
+function getStatusStyle(obj: ConstructionObject) {
+  const { status } = obj;
+
   if (status === 'PLANNED') {
-    return { label: 'Запланировано', className: 'bg-gray-200 text-gray-700' };
+    return { label: 'Запланировано', className: 'bg-[#e9ecef] text-gray-700' };
   }
   if (status === 'COMPLETED') {
-    return { label: 'Завершён', className: 'bg-green-500 text-white' };
+    return { label: 'Завершён', className: 'bg-[#4CAF50] text-white' };
   }
   if (status === 'SUSPENDED') {
     return { label: 'Приостановлен', className: 'bg-yellow-500 text-white' };
   }
-  return { label: 'В работе', className: 'bg-blue-500 text-white' };
+
+  // IN_PROGRESS - рассчитываем отклонение
+  const deviation = calculateDeviation(obj);
+
+  if (deviation === null) {
+    return { label: 'В работе', className: 'bg-blue-500 text-white' };
+  }
+
+  // Цветовая индикация по отклонению
+  if (deviation >= 0) {
+    const label = deviation > 0 ? `Опережаем: +${deviation}%` : `Успеваем: ${deviation}%`;
+    return { label, className: 'bg-[#4CAF50] text-white' };
+  }
+  if (deviation >= -10) {
+    return { label: `Отстаём: ${deviation}%`, className: 'bg-[#FF9800] text-white' };
+  }
+  return { label: `Не успеваем: ${deviation}%`, className: 'bg-[#F44336] text-white' };
 }
 
 export default function ObjectsPage() {
@@ -111,7 +156,7 @@ export default function ObjectsPage() {
           ) : (
             objects.map((obj, index) => {
               const progress = obj.progress ?? 0;
-              const status = getStatusStyle(obj.status);
+              const status = getStatusStyle(obj);
 
               return (
                 <Link
