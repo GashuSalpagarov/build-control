@@ -51,7 +51,7 @@ export function ObjectFormDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [contractors, setContractors] = useState<Contractor[]>([]);
-  const [selectedContractorId, setSelectedContractorId] = useState<string>('');
+  const [selectedContractorId, setSelectedContractorId] = useState<string>('__none__');
 
   const isEditing = !!object;
 
@@ -77,7 +77,7 @@ export function ObjectFormDialog({
   useEffect(() => {
     if (open) {
       contractorsApi.getAll().then(setContractors).catch(console.error);
-      setSelectedContractorId(object?.contractorId || '');
+      setSelectedContractorId(object?.contractorId || '__none__');
       reset({
         name: object?.name || '',
         address: object?.address || '',
@@ -98,7 +98,7 @@ export function ObjectFormDialog({
       const payload = {
         name: data.name,
         address: data.address || undefined,
-        contractorId: selectedContractorId || undefined,
+        contractorId: selectedContractorId && selectedContractorId !== '__none__' ? selectedContractorId : undefined,
         startDate: data.startDate || undefined,
         endDate: data.endDate || undefined,
         budget: data.budget ? parseFloat(data.budget) : undefined,
@@ -112,7 +112,7 @@ export function ObjectFormDialog({
       }
 
       reset();
-      setSelectedContractorId('');
+      setSelectedContractorId('__none__');
       onOpenChange(false);
       onSuccess();
     } catch (err) {
@@ -163,7 +163,7 @@ export function ObjectFormDialog({
                 <SelectValue placeholder="Выберите подрядчика" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Не выбран</SelectItem>
+                <SelectItem value="__none__">Не выбран</SelectItem>
                 {contractors.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
