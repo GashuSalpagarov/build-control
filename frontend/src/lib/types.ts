@@ -73,6 +73,55 @@ export interface VolumeCheck {
   comment?: string;
 }
 
+export interface EquipmentCheck {
+  id: string;
+  resourceCheckId: string;
+  equipmentTypeId: string;
+  quantity: number;
+  equipmentType: EquipmentType;
+}
+
+export interface ResourceCheck {
+  id: string;
+  stageId: string;
+  userId: string;
+  date: string;
+  actualPeople: number | null;
+  comment?: string;
+  createdAt: string;
+  equipmentChecks: EquipmentCheck[];
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  stage: {
+    id: string;
+    name: string;
+    objectId?: string;
+  };
+}
+
+export interface CreateResourceCheckDto {
+  stageId: string;
+  date: string;
+  actualPeople: number;
+  comment?: string;
+  equipmentChecks?: {
+    equipmentTypeId: string;
+    quantity: number;
+  }[];
+}
+
+export interface UpdateResourceCheckDto {
+  actualPeople?: number;
+  comment?: string;
+  equipmentChecks?: {
+    equipmentTypeId: string;
+    quantity: number;
+  }[];
+}
+
 export interface Stage {
   id: string;
   objectId: string;

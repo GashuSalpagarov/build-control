@@ -5,8 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Header } from '@/components/layout/header';
-import { objectsApi, stagesApi } from '@/lib/api';
-import { ConstructionObject, Stage } from '@/lib/types';
+import { objectsApi, stagesApi, resourceChecksApi } from '@/lib/api';
+import { ConstructionObject, Stage, ResourceCheck } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -161,6 +161,7 @@ export default function ObjectDetailPage() {
   const router = useRouter();
   const [object, setObject] = useState<ConstructionObject | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [resourceChecks, setResourceChecks] = useState<ResourceCheck[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
   const [isObjectDialogOpen, setIsObjectDialogOpen] = useState(false);
@@ -176,13 +177,26 @@ export default function ObjectDetailPage() {
   const loadData = useCallback(() => {
     if (user && id) {
       setIsLoading(true);
+
+      // Вычисляем диапазон дат для загрузки проверок
+      const startDate = new Date();
+      startDate.setDate(1);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 62);
+
       Promise.all([
         objectsApi.getOne(id as string),
         stagesApi.getByObject(id as string),
+        resourceChecksApi.getByDateRange(
+          id as string,
+          startDate.toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0]
+        ),
       ])
-        .then(([obj, stg]) => {
+        .then(([obj, stg, checks]) => {
           setObject(obj);
           setStages(stg);
+          setResourceChecks(checks);
         })
         .catch(console.error)
         .finally(() => setIsLoading(false));
@@ -473,37 +487,87 @@ export default function ObjectDetailPage() {
                           </div>
                         </td>
                         {/* План/факт людей */}
-                        <td className="px-2 py-2 text-center border-r">
-                          <div className="text-xs">
-                            <span className="text-gray-400">план:</span>{' '}
-                            <span className="font-medium">{stage.plannedPeople || '—'}</span>
-                          </div>
-                          <div className="text-xs text-green-600">
-                            <span className="text-gray-400">факт:</span>{' '}
-                            <span className="font-medium">—</span>
-                          </div>
-                        </td>
+                        {(() => {
+                          const stageChecks = resourceChecks.filter((c) => c.stageId === stage.id);
+                          const plannedPeople = stage.plannedPeople || 0;
+                          const avgPeople = stageChecks.length > 0
+                            ? Math.round(stageChecks.reduce((sum, c) => sum + (c.actualPeople || 0), 0) / stageChecks.length)
+                            : null;
+
+                          return (
+                            <td className="px-2 py-2 text-center border-r">
+                              <div className="text-xs">
+                                <span className="text-gray-400">план:</span>{' '}
+                                <span className="font-medium">{plannedPeople || '—'}</span>
+                              </div>
+                              <div className={`text-xs ${avgPeople === null ? 'text-gray-400' : avgPeople >= plannedPeople ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className="text-gray-400">факт:</span>{' '}
+                                <span className="font-medium">{avgPeople ?? '—'}</span>
+                              </div>
+                            </td>
+                          );
+                        })()}
                         {/* План/факт техники */}
-                        <td className="px-2 py-2 text-center border-r">
-                          <div className="text-xs">
-                            <span className="text-gray-400">план:</span>{' '}
-                            <span className="font-medium">
-                              {stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || '—'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-green-600">
-                            <span className="text-gray-400">факт:</span>{' '}
-                            <span className="font-medium">—</span>
-                          </div>
-                        </td>
+                        {(() => {
+                          const stageChecks = resourceChecks.filter((c) => c.stageId === stage.id);
+                          const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
+                          const avgEquipment = stageChecks.length > 0
+                            ? Math.round(
+                                stageChecks.reduce(
+                                  (sum, c) => sum + c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0),
+                                  0
+                                ) / stageChecks.length
+                              )
+                            : null;
+
+                          return (
+                            <td className="px-2 py-2 text-center border-r">
+                              <div className="text-xs">
+                                <span className="text-gray-400">план:</span>{' '}
+                                <span className="font-medium">{plannedEquipment || '—'}</span>
+                              </div>
+                              <div className={`text-xs ${avgEquipment === null ? 'text-gray-400' : avgEquipment >= plannedEquipment ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className="text-gray-400">факт:</span>{' '}
+                                <span className="font-medium">{avgEquipment ?? '—'}</span>
+                              </div>
+                            </td>
+                          );
+                        })()}
                         {/* Ячейки календаря */}
                         {periods.map((period, i) => {
                           const inRange = isPeriodInRange(period, stage.startDate, stage.endDate);
                           const plannedPeople = stage.plannedPeople || 0;
                           const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
-                          // Факт пока не реализован (появится в Фазе 2)
-                          const actualPeople = null;
-                          const actualEquipment = null;
+
+                          // Ищем проверки для этого этапа в данном периоде
+                          const periodChecks = resourceChecks.filter(
+                            (check) =>
+                              check.stageId === stage.id &&
+                              period.dates.some(
+                                (d) => d.toISOString().split('T')[0] === check.date.split('T')[0]
+                              )
+                          );
+
+                          // Суммируем факт по всем проверкам в периоде
+                          let actualPeople: number | null = null;
+                          let actualEquipment: number | null = null;
+
+                          if (periodChecks.length > 0) {
+                            // Берём среднее или последнее значение
+                            const totalPeople = periodChecks.reduce(
+                              (sum, c) => sum + (c.actualPeople || 0),
+                              0
+                            );
+                            actualPeople = Math.round(totalPeople / periodChecks.length);
+
+                            const totalEquipment = periodChecks.reduce(
+                              (sum, c) =>
+                                sum +
+                                c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0),
+                              0
+                            );
+                            actualEquipment = Math.round(totalEquipment / periodChecks.length);
+                          }
 
                           return (
                             <td
@@ -517,13 +581,13 @@ export default function ObjectDetailPage() {
                                   <div className="text-[10px] leading-tight">
                                     <div className="flex justify-between">
                                       <span className="text-gray-500">Л:</span>
-                                      <span className={actualPeople === null ? 'text-gray-400' : actualPeople >= plannedPeople ? 'text-green-600' : 'text-red-600'}>
+                                      <span className={actualPeople === null ? 'text-gray-400' : actualPeople >= plannedPeople ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                         {actualPeople ?? '—'}/{plannedPeople}
                                       </span>
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-gray-500">Т:</span>
-                                      <span className={actualEquipment === null ? 'text-gray-400' : actualEquipment >= plannedEquipment ? 'text-green-600' : 'text-red-600'}>
+                                      <span className={actualEquipment === null ? 'text-gray-400' : actualEquipment >= plannedEquipment ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                         {actualEquipment ?? '—'}/{plannedEquipment}
                                       </span>
                                     </div>

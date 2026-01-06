@@ -114,7 +114,7 @@ export const authApi = {
 };
 
 // Objects API
-import type { ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment, UserWithAssignments } from './types';
+import type { ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment, UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto } from './types';
 
 export interface CreateObjectDto {
   name: string;
@@ -227,4 +227,37 @@ export const plannedEquipmentApi = {
   setStageEquipment: (stageId: string, data: SetStageEquipmentDto) =>
     api.post<PlannedEquipment[]>(`/planned-equipment/stage/${stageId}`, data),
   delete: (id: string) => api.delete(`/planned-equipment/${id}`),
+};
+
+// Resource Checks API (ежедневные проверки ресурсов)
+export const resourceChecksApi = {
+  // Получить список проверок с фильтрами
+  getAll: (params?: { stageId?: string; date?: string; objectId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.stageId) queryParams.append('stageId', params.stageId);
+    if (params?.date) queryParams.append('date', params.date);
+    if (params?.objectId) queryParams.append('objectId', params.objectId);
+    const query = queryParams.toString();
+    return api.get<ResourceCheck[]>(`/resource-checks${query ? `?${query}` : ''}`);
+  },
+
+  // Получить проверки по диапазону дат (для календаря)
+  getByDateRange: (objectId: string, startDate: string, endDate: string) =>
+    api.get<ResourceCheck[]>(
+      `/resource-checks/by-date-range?objectId=${objectId}&startDate=${startDate}&endDate=${endDate}`
+    ),
+
+  // Получить одну проверку
+  getOne: (id: string) => api.get<ResourceCheck>(`/resource-checks/${id}`),
+
+  // Создать проверку
+  create: (data: CreateResourceCheckDto) =>
+    api.post<ResourceCheck>('/resource-checks', data),
+
+  // Обновить проверку (только сегодняшнюю)
+  update: (id: string, data: UpdateResourceCheckDto) =>
+    api.patch<ResourceCheck>(`/resource-checks/${id}`, data),
+
+  // Удалить проверку (только сегодняшнюю)
+  delete: (id: string) => api.delete(`/resource-checks/${id}`),
 };

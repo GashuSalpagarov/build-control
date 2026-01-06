@@ -9,6 +9,7 @@ import { EquipmentTypesModule } from './equipment-types/equipment-types.module';
 import { ContractorsModule } from './contractors/contractors.module';
 import { UsersModule } from './users/users.module';
 import { PlannedEquipmentModule } from './planned-equipment/planned-equipment.module';
+import { ResourceChecksModule } from './resource-checks/resource-checks.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PlannedEquipmentModule } from './planned-equipment/planned-equipment.mo
     ContractorsModule,
     UsersModule,
     PlannedEquipmentModule,
+    ResourceChecksModule,
   ],
   controllers: [],
   providers: [],
