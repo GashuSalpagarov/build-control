@@ -104,11 +104,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-3 pb-6">
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-md bg-primary text-primary-foreground">
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-md bg-primary text-primary-foreground shrink-0">
               <Building2 className="w-7 h-7" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight leading-tight text-primary text-center">
+            <CardTitle className="text-2xl font-bold tracking-tight leading-none text-primary">
               <div>Контроль</div>
               <div>строительства</div>
             </CardTitle>
@@ -162,7 +162,7 @@ export default function LoginPage() {
                 const user = TEST_USERS.find(u => u.email === value);
                 if (user) handleQuickLogin(user.email, user.password);
               }}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <SelectValue placeholder="Быстрый вход (dev)" />
@@ -172,7 +172,7 @@ export default function LoginPage() {
                   {TEST_USERS.map((user) => {
                     const IconComponent = user.icon;
                     return (
-                      <SelectItem key={user.email} value={user.email}>
+                      <SelectItem key={user.email} value={user.email} className="cursor-pointer">
                         <div className="flex items-center gap-3 py-1">
                           <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10">
                             <IconComponent className="w-4 h-4 text-primary" />
