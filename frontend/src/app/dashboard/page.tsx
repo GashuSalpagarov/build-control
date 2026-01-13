@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { objectsApi } from '@/lib/api';
@@ -13,6 +12,7 @@ import {
   statusLabels,
   statusColors,
 } from '@/lib/types';
+import { chartColors } from '@/lib/design-system';
 import {
   Building2,
   TrendingUp,
@@ -45,13 +45,6 @@ function formatCurrency(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  PLANNED: '#9ca3af',
-  IN_PROGRESS: '#3b82f6',
-  COMPLETED: '#22c55e',
-  SUSPENDED: '#f59e0b',
-};
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -139,8 +132,7 @@ export default function DashboardPage() {
 
   if (isLoading || !stats) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="flex-1 bg-background">
         <main className="max-w-7xl mx-auto px-4 py-6">
           <div className="text-gray-500">Загрузка данных...</div>
         </main>
@@ -150,10 +142,10 @@ export default function DashboardPage() {
 
   // Данные для графиков
   const statusChartData = [
-    { name: 'Запланировано', value: stats.summary.plannedObjects, color: STATUS_COLORS.PLANNED },
-    { name: 'В работе', value: stats.summary.inProgressObjects, color: STATUS_COLORS.IN_PROGRESS },
-    { name: 'Завершено', value: stats.summary.completedObjects, color: STATUS_COLORS.COMPLETED },
-    { name: 'Приостановлено', value: stats.summary.suspendedObjects, color: STATUS_COLORS.SUSPENDED },
+    { name: 'Запланировано', value: stats.summary.plannedObjects, color: chartColors.status.PLANNED },
+    { name: 'В работе', value: stats.summary.inProgressObjects, color: chartColors.status.IN_PROGRESS },
+    { name: 'Завершено', value: stats.summary.completedObjects, color: chartColors.status.COMPLETED },
+    { name: 'Приостановлено', value: stats.summary.suspendedObjects, color: chartColors.status.SUSPENDED },
   ].filter(d => d.value > 0);
 
   const progressChartData = stats.objects
@@ -170,8 +162,7 @@ export default function DashboardPage() {
     .slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>

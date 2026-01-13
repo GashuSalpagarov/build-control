@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -134,8 +133,7 @@ export default function AppealDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="flex-1 bg-background">
         <main className="max-w-4xl mx-auto px-4 py-6">
           <div className="text-gray-500">Загрузка...</div>
         </main>
@@ -145,8 +143,7 @@ export default function AppealDetailPage() {
 
   if (!appeal) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="flex-1 bg-background">
         <main className="max-w-4xl mx-auto px-4 py-6">
           <div className="text-gray-500">Обращение не найдено</div>
         </main>
@@ -158,8 +155,7 @@ export default function AppealDetailPage() {
   const canSendMessage = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Навигация */}
         <Link

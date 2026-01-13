@@ -4,13 +4,13 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { objectsApi } from '@/lib/api';
 import { ConstructionObject } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
+import { statusStyles, deviationStyles } from '@/lib/design-system';
 
 function formatCurrency(amount: number | undefined | null): string {
   if (!amount) return '—';
@@ -51,32 +51,29 @@ function calculateDeviation(obj: ConstructionObject): number | null {
 function getStatusStyle(obj: ConstructionObject) {
   const { status } = obj;
 
-  if (status === 'PLANNED') {
-    return { label: 'Запланировано', className: 'bg-[#e9ecef] text-gray-700' };
-  }
-  if (status === 'COMPLETED') {
-    return { label: 'Завершён', className: 'bg-[#4CAF50] text-white' };
-  }
-  if (status === 'SUSPENDED') {
-    return { label: 'Приостановлен', className: 'bg-yellow-500 text-white' };
+  // For non-IN_PROGRESS statuses, return predefined style
+  if (status !== 'IN_PROGRESS') {
+    return statusStyles[status];
   }
 
-  // IN_PROGRESS - рассчитываем отклонение
+  // IN_PROGRESS - calculate deviation
   const deviation = calculateDeviation(obj);
 
   if (deviation === null) {
-    return { label: 'В работе', className: 'bg-blue-500 text-white' };
+    return statusStyles.IN_PROGRESS;
   }
 
-  // Цветовая индикация по отклонению
-  if (deviation >= 0) {
-    const label = deviation > 0 ? `Опережаем: +${deviation}%` : `Успеваем: ${deviation}%`;
-    return { label, className: 'bg-[#4CAF50] text-white' };
+  // Deviation-based styling
+  if (deviation > 0) {
+    return deviationStyles.ahead(deviation);
+  }
+  if (deviation === 0) {
+    return deviationStyles.onTrack(deviation);
   }
   if (deviation >= -10) {
-    return { label: `Отстаём: ${deviation}%`, className: 'bg-[#FF9800] text-white' };
+    return deviationStyles.slightlyBehind(deviation);
   }
-  return { label: `Не успеваем: ${deviation}%`, className: 'bg-[#F44336] text-white' };
+  return deviationStyles.behind(deviation);
 }
 
 export default function ObjectsPage() {
@@ -118,8 +115,7 @@ export default function ObjectsPage() {
   const canCreate = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>

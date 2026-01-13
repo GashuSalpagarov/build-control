@@ -32,16 +32,16 @@ export function Header() {
   ];
 
   return (
-    <header className="bg-indigo-600 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
+    <header className="bg-card border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 min-h-16 flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-2xl font-bold">Министерство строительства КЧР</h1>
-            <p className="text-indigo-200 text-sm">Система контроля строительства</p>
+            <h1 className="text-xl font-semibold text-foreground">Министерство строительства КЧР</h1>
+            <p className="text-muted-foreground text-sm">Контроль строительства</p>
           </div>
           {user && (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-indigo-200">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="w-4 h-4" />
                 <span className="text-sm">{user.name}</span>
               </div>
@@ -49,7 +49,6 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="text-white hover:bg-indigo-700"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Выйти
@@ -59,18 +58,18 @@ export function Header() {
         </div>
       </div>
       {user && (
-        <nav className="bg-indigo-700">
+        <nav className="border-t border-border">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex gap-1">
+            <div className="flex gap-6">
               {navItems.filter(item => item.show).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'px-4 py-2 text-sm font-medium transition-colors',
+                    'py-3 text-sm font-medium transition-colors border-b-2',
                     pathname.startsWith(item.href)
-                      ? 'bg-indigo-800 text-white'
-                      : 'text-indigo-200 hover:bg-indigo-600 hover:text-white'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted'
                   )}
                 >
                   {item.label}

@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { contractorsApi } from '@/lib/api';
 import { Contractor } from '@/lib/types';
 import { Plus, Pencil, Trash2, Building2 } from 'lucide-react';
@@ -73,8 +72,7 @@ export default function ContractorsPage() {
   const canManage = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>

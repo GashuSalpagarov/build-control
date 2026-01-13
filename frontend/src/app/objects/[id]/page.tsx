@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi } from '@/lib/api';
 import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -239,8 +238,7 @@ export default function ObjectDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="flex-1 bg-background">
         <main className="max-w-7xl mx-auto px-4 py-6">
           <div className="text-gray-500">Загрузка...</div>
         </main>
@@ -250,8 +248,7 @@ export default function ObjectDetailPage() {
 
   if (!object) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="flex-1 bg-background">
         <main className="max-w-7xl mx-auto px-4 py-6">
           <div className="text-gray-500">Объект не найден</div>
         </main>
@@ -262,8 +259,7 @@ export default function ObjectDetailPage() {
   const canEdit = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-full mx-auto px-4 py-6">
         {/* Навигация и заголовок */}
         <div className="mb-6">

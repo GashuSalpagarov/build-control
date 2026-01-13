@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import { Header } from '@/components/layout/header';
 import { usersApi } from '@/lib/api';
 import { UserWithAssignments, roleLabels, Role } from '@/lib/types';
 import { Plus, Pencil, Trash2, Users, UserCheck, UserX } from 'lucide-react';
@@ -83,8 +82,7 @@ export default function UsersPage() {
   const canManage = ['MINISTER', 'SUPERADMIN'].includes(user.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="flex-1 bg-background">
       <main className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
