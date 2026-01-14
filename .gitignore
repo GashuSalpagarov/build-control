@@ -38,3 +38,6 @@ prisma/migrations/
 # PWA
 public/sw.js
 public/workbox-*.js
+
+# Claude
+.claude

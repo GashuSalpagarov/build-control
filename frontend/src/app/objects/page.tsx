@@ -144,7 +144,23 @@ export default function ObjectsPage() {
 
           {/* Список объектов */}
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
+            <>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-[50px_1fr_100px_150px_150px] gap-4 px-6 py-4 border-b last:border-b-0 animate-pulse"
+                >
+                  <div className="h-6 w-6 bg-gray-200 rounded" />
+                  <div>
+                    <div className="h-5 w-64 bg-gray-200 rounded mb-2" />
+                    <div className="h-4 w-40 bg-gray-200 rounded" />
+                  </div>
+                  <div className="h-6 w-12 bg-gray-200 rounded" />
+                  <div className="h-6 w-24 bg-gray-200 rounded" />
+                  <div className="h-5 w-28 bg-gray-200 rounded ml-auto" />
+                </div>
+              ))}
+            </>
           ) : objects.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               Объекты не найдены
