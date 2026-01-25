@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi } from '@/lib/api';
 import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -228,6 +229,23 @@ export default function ObjectDetailPage() {
     setIsStageDialogOpen(true);
   };
 
+  const canEdit = user ? ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role) : false;
+
+  const headerAction = useMemo(() => {
+    if (!canEdit) return undefined;
+    return (
+      <Button onClick={handleAddStage}>
+        <Plus className="w-4 h-4 mr-2" />
+        Добавить этап
+      </Button>
+    );
+  }, [canEdit]);
+
+  usePageHeader({
+    title: object?.name || 'Загрузка...',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -256,43 +274,32 @@ export default function ObjectDetailPage() {
     );
   }
 
-  const canEdit = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
-
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-full mx-auto px-4 py-6">
-        {/* Навигация и заголовок */}
-        <div className="mb-6">
-          <Link
-            href="/objects"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            К списку объектов
-          </Link>
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold text-gray-900">{object.name}</h2>
-                {canEdit && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsObjectDialogOpen(true)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-gray-500">{object.address || 'Адрес не указан'}</p>
-            </div>
-            {canEdit && (
-              <Button onClick={handleAddStage}>
-                <Plus className="w-4 h-4 mr-2" />
-                Добавить этап
-              </Button>
-            )}
+        {/* Навигация */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/objects"
+              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              К списку объектов
+            </Link>
+            <span className="text-gray-300">|</span>
+            <span className="text-sm text-gray-500">{object.address || 'Адрес не указан'}</span>
           </div>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsObjectDialogOpen(true)}
+            >
+              <Pencil className="w-4 h-4 mr-1" />
+              Редактировать
+            </Button>
+          )}
         </div>
 
         {/* Карточки статистики */}

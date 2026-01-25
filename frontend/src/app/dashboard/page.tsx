@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { objectsApi } from '@/lib/api';
@@ -122,6 +123,18 @@ export default function DashboardPage() {
     XLSX.writeFile(wb, `dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  const headerAction = useMemo(() => (
+    <Button onClick={exportToExcel} variant="outline" disabled={!stats}>
+      <Download className="w-4 h-4 mr-2" />
+      Выгрузить в Excel
+    </Button>
+  ), [stats]);
+
+  usePageHeader({
+    title: 'Дашборд',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -164,17 +177,6 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Дашборд</h2>
-            <p className="text-sm text-gray-500">Сводная аналитика по объектам</p>
-          </div>
-          <Button onClick={exportToExcel} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Выгрузить в Excel
-          </Button>
-        </div>
-
         {/* Карточки статистики */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4">

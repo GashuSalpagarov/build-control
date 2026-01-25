@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -156,6 +157,21 @@ export default function TechnadzorPage() {
     return stageSummary?.percent || 0;
   };
 
+  const headerAction = useMemo(() => (
+    <Button
+      onClick={() => setIsFormOpen(true)}
+      disabled={selectedObjectId === '__none__'}
+    >
+      <Plus className="w-4 h-4 mr-2" />
+      Добавить проверку
+    </Button>
+  ), [selectedObjectId]);
+
+  usePageHeader({
+    title: 'Объёмы',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -167,20 +183,6 @@ export default function TechnadzorPage() {
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Проверки объёмов</h2>
-            <p className="text-sm text-gray-500">Контроль выполнения работ по этапам</p>
-          </div>
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            disabled={selectedObjectId === '__none__'}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить проверку
-          </Button>
-        </div>
-
         {/* Выбор объекта */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="w-full max-w-md">

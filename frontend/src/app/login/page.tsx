@@ -6,10 +6,15 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Lock, Building2, Shield, Eye, Calculator, ClipboardCheck, HardHat, Briefcase, Users } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Mail, Lock, Building2, Shield, Eye, Calculator, ClipboardCheck, HardHat, Briefcase, Users, ChevronDown } from 'lucide-react';
 
 const TEST_USERS = [
   {
@@ -101,7 +106,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 overflow-hidden">
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-3 pb-6">
           <div className="flex items-center justify-center gap-3">
@@ -158,22 +163,29 @@ export default function LoginPage() {
 
           {process.env.NODE_ENV === 'development' && (
             <div className="pt-4 border-t">
-              <Select onValueChange={(value) => {
-                const user = TEST_USERS.find(u => u.email === value);
-                if (user) handleQuickLogin(user.email, user.password);
-              }}>
-                <SelectTrigger className="w-full cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Быстрый вход (dev)" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>Быстрый вход (dev)</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
                   {TEST_USERS.map((user) => {
                     const IconComponent = user.icon;
                     return (
-                      <SelectItem key={user.email} value={user.email} className="cursor-pointer">
-                        <div className="flex items-center gap-3 py-1">
+                      <DropdownMenuItem
+                        key={user.email}
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          handleQuickLogin(user.email, user.password);
+                        }}
+                        className="cursor-pointer py-2"
+                      >
+                        <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10">
                             <IconComponent className="w-4 h-4 text-primary" />
                           </div>
@@ -191,11 +203,11 @@ export default function LoginPage() {
                             </p>
                           </div>
                         </div>
-                      </SelectItem>
+                      </DropdownMenuItem>
                     );
                   })}
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </CardContent>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { equipmentTypesApi } from '@/lib/api';
 import { EquipmentType } from '@/lib/types';
 import { Plus, Pencil, Trash2, Truck, Check, X } from 'lucide-react';
@@ -98,6 +99,23 @@ export default function EquipmentTypesPage() {
     setEditingName('');
   };
 
+  const canManage = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user?.role || '');
+
+  const headerAction = useMemo(() => {
+    if (!canManage || isAdding) return undefined;
+    return (
+      <Button onClick={() => { setIsAdding(true); setEditingId(null); }}>
+        <Plus className="w-4 h-4 mr-2" />
+        Добавить
+      </Button>
+    );
+  }, [canManage, isAdding]);
+
+  usePageHeader({
+    title: 'Техника',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -106,24 +124,9 @@ export default function EquipmentTypesPage() {
     );
   }
 
-  const canManage = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
-
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-3xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Типы техники</h2>
-            <p className="text-sm text-gray-500">Справочник видов строительной техники</p>
-          </div>
-          {canManage && !isAdding && (
-            <Button onClick={() => { setIsAdding(true); setEditingId(null); }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить
-            </Button>
-          )}
-        </div>
-
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {isAdding && (
             <div className="flex items-center gap-2 px-6 py-4 border-b bg-blue-50">

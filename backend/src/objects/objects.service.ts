@@ -29,17 +29,23 @@ export class ObjectsService {
     });
   }
 
-  async findAll(tenantId: string, userId: string, userRole: Role) {
-    let whereClause: any = { tenantId };
+  async findAll(tenantId: string | null, userId: string, userRole: Role) {
+    let whereClause: any = {};
 
-    // Подрядчик видит только свои объекты
-    if (userRole === Role.CONTRACTOR) {
+    // SUPERADMIN видит все объекты
+    if (userRole === Role.SUPERADMIN) {
+      whereClause = {};
+    } else if (userRole === Role.CONTRACTOR) {
+      // Подрядчик видит только свои объекты
       const assignments = await this.prisma.userObjectAssignment.findMany({
         where: { userId },
         select: { objectId: true },
       });
       const objectIds = assignments.map((a) => a.objectId);
       whereClause = { tenantId, id: { in: objectIds } };
+    } else {
+      // Остальные роли видят объекты своего tenant
+      whereClause = { tenantId };
     }
 
     const objects = await this.prisma.object.findMany({

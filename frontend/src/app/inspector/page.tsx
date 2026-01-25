@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -140,6 +141,18 @@ export default function InspectorPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const headerAction = useMemo(() => (
+    <Button onClick={handleCreateCheck}>
+      <Plus className="w-4 h-4 mr-2" />
+      Новая проверка
+    </Button>
+  ), []);
+
+  usePageHeader({
+    title: 'Проверки',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -151,21 +164,6 @@ export default function InspectorPage() {
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Ежедневные проверки
-            </h2>
-            <p className="text-sm text-gray-500">
-              Контроль людей и техники на объектах
-            </p>
-          </div>
-          <Button onClick={handleCreateCheck}>
-            <Plus className="w-4 h-4 mr-2" />
-            Новая проверка
-          </Button>
-        </div>
-
         {/* Фильтры */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="flex flex-wrap gap-4">

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { usersApi } from '@/lib/api';
 import { UserWithAssignments, roleLabels, Role } from '@/lib/types';
 import { Plus, Pencil, Trash2, Users, UserCheck, UserX } from 'lucide-react';
@@ -71,6 +72,23 @@ export default function UsersPage() {
     }
   };
 
+  const canManage = ['MINISTER', 'SUPERADMIN'].includes(user?.role || '');
+
+  const headerAction = useMemo(() => {
+    if (!canManage) return undefined;
+    return (
+      <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
+        <Plus className="w-4 h-4 mr-2" />
+        Добавить
+      </Button>
+    );
+  }, [canManage]);
+
+  usePageHeader({
+    title: 'Пользователи',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -79,24 +97,9 @@ export default function UsersPage() {
     );
   }
 
-  const canManage = ['MINISTER', 'SUPERADMIN'].includes(user.role);
-
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Пользователи</h2>
-            <p className="text-sm text-gray-500">Управление пользователями системы</p>
-          </div>
-          {canManage && (
-            <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить
-            </Button>
-          )}
-        </div>
-
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="grid grid-cols-[1fr_180px_120px_100px_100px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <div>Пользователь</div>

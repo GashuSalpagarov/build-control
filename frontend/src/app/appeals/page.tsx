@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,6 +167,23 @@ export default function AppealsPage() {
     }
   };
 
+  const canCreate = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user?.role || '');
+
+  const headerAction = useMemo(() => {
+    if (!canCreate) return undefined;
+    return (
+      <Button onClick={() => setIsFormOpen(true)}>
+        <Plus className="w-4 h-4 mr-2" />
+        Создать обращение
+      </Button>
+    );
+  }, [canCreate]);
+
+  usePageHeader({
+    title: 'Обращения',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -174,24 +192,9 @@ export default function AppealsPage() {
     );
   }
 
-  const canCreate = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
-
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Обращения</h2>
-            <p className="text-sm text-gray-500">Вопросы, проблемы и предложения</p>
-          </div>
-          {canCreate && (
-            <Button onClick={() => setIsFormOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Создать обращение
-            </Button>
-          )}
-        </div>
-
         {/* Фильтры */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

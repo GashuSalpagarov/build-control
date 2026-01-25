@@ -9,7 +9,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -37,7 +36,6 @@ import {
   Wrench,
   LogOut,
   User,
-  ChevronUp,
   Settings,
   X,
 } from 'lucide-react';
@@ -53,15 +51,6 @@ const getRoleLabel = (role: string) => {
     SUPERADMIN: 'Суперадмин',
   };
   return roleLabels[role] || role;
-};
-
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 };
 
 export function AppSidebar() {

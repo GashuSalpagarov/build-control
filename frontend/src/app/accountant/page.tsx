@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -163,6 +164,21 @@ export default function AccountantPage() {
     ? parseFloat(formData.amount) > getStageRemaining(formData.stageId)
     : false;
 
+  const headerAction = useMemo(() => (
+    <Button
+      onClick={() => setIsFormOpen(true)}
+      disabled={selectedObjectId === '__none__'}
+    >
+      <Plus className="w-4 h-4 mr-2" />
+      Добавить платёж
+    </Button>
+  ), [selectedObjectId]);
+
+  usePageHeader({
+    title: 'Платежи',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -174,20 +190,6 @@ export default function AccountantPage() {
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Платежи</h2>
-            <p className="text-sm text-gray-500">Управление платежами по объектам</p>
-          </div>
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            disabled={selectedObjectId === '__none__'}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить платёж
-          </Button>
-        </div>
-
         {/* Выбор объекта */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="w-full max-w-md">

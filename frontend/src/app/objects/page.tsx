@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { objectsApi } from '@/lib/api';
 import { ConstructionObject } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +105,23 @@ export default function ObjectsPage() {
     loadObjects();
   }, [loadObjects]);
 
+  const canCreate = user ? ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role) : false;
+
+  const headerAction = useMemo(() => {
+    if (!canCreate) return undefined;
+    return (
+      <Button onClick={() => setIsDialogOpen(true)}>
+        <Plus className="w-4 h-4 mr-2" />
+        Добавить объект
+      </Button>
+    );
+  }, [canCreate]);
+
+  usePageHeader({
+    title: 'Объекты строительства',
+    action: headerAction,
+  });
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -112,26 +130,9 @@ export default function ObjectsPage() {
     );
   }
 
-  const canCreate = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
-
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Объекты строительства
-            </h2>
-            <p className="text-sm text-gray-500">2025 год</p>
-          </div>
-          {canCreate && (
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить объект
-            </Button>
-          )}
-        </div>
-
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {/* Заголовок таблицы */}
           <div className="grid grid-cols-[50px_1fr_100px_150px_150px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">

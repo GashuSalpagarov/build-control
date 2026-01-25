@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -122,6 +123,10 @@ export default function AppealDetailPage() {
         return <XCircle className="w-4 h-4" />;
     }
   };
+
+  usePageHeader({
+    title: appeal?.subject || 'Загрузка...',
+  });
 
   if (authLoading || !user) {
     return (
