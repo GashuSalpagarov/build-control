@@ -297,31 +297,8 @@ export default function ObjectDetailPage() {
 
         {/* Таблица-календарь */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {/* Кнопки масштаба и статистика */}
+          {/* Статистика и кнопки масштаба */}
           <div className="flex items-center justify-between gap-4 px-4 py-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500">Масштаб:</span>
-              <div className="flex gap-1">
-                {[
-                  { value: 'days', label: 'По дням' },
-                  { value: 'weeks', label: 'По неделям' },
-                  { value: 'decades', label: 'По декадам' },
-                  { value: 'months', label: 'По месяцам' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setCalendarScale(option.value as CalendarScale)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                      calendarScale === option.value
-                        ? 'bg-primary text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
             {/* Статистика */}
             {(() => {
               const totalProgress = stages.length > 0
@@ -379,6 +356,30 @@ export default function ObjectDetailPage() {
                 </div>
               );
             })()}
+            {/* Масштаб */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">Масштаб:</span>
+              <div className="flex gap-1">
+                {[
+                  { value: 'days', label: 'По дням' },
+                  { value: 'weeks', label: 'По неделям' },
+                  { value: 'decades', label: 'По декадам' },
+                  { value: 'months', label: 'По месяцам' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setCalendarScale(option.value as CalendarScale)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarScale === option.value
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[1200px]">
