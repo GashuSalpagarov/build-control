@@ -7,10 +7,11 @@ import { UpdateStageDto } from './dto/update-stage.dto';
 export class StagesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(tenantId: string, dto: CreateStageDto) {
-    // Проверяем, что объект принадлежит тенанту
+  async create(tenantId: string | null, dto: CreateStageDto) {
+    // Проверяем, что объект существует (SUPERADMIN с tenantId=null может работать со всеми)
+    const whereClause = tenantId ? { id: dto.objectId, tenantId } : { id: dto.objectId };
     const object = await this.prisma.object.findFirst({
-      where: { id: dto.objectId, tenantId },
+      where: whereClause,
     });
 
     if (!object) {
@@ -60,10 +61,11 @@ export class StagesService {
     return stage;
   }
 
-  async findAllByObject(objectId: string, tenantId: string) {
-    // Проверяем, что объект принадлежит тенанту
+  async findAllByObject(objectId: string, tenantId: string | null) {
+    // Проверяем, что объект существует (SUPERADMIN с tenantId=null может работать со всеми)
+    const whereClause = tenantId ? { id: objectId, tenantId } : { id: objectId };
     const object = await this.prisma.object.findFirst({
-      where: { id: objectId, tenantId },
+      where: whereClause,
     });
 
     if (!object) {
@@ -85,7 +87,7 @@ export class StagesService {
     });
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenantId: string | null) {
     const stage = await this.prisma.stage.findFirst({
       where: { id },
       include: {
@@ -109,14 +111,15 @@ export class StagesService {
       },
     });
 
-    if (!stage || stage.object.tenantId !== tenantId) {
+    // SUPERADMIN (tenantId = null) может видеть все этапы
+    if (!stage || (tenantId && stage.object.tenantId !== tenantId)) {
       throw new NotFoundException('Этап не найден');
     }
 
     return stage;
   }
 
-  async update(id: string, tenantId: string, dto: UpdateStageDto) {
+  async update(id: string, tenantId: string | null, dto: UpdateStageDto) {
     await this.findOne(id, tenantId);
 
     const stage = await this.prisma.stage.update({
@@ -160,7 +163,7 @@ export class StagesService {
     return stage;
   }
 
-  async remove(id: string, tenantId: string) {
+  async remove(id: string, tenantId: string | null) {
     await this.findOne(id, tenantId);
 
     return this.prisma.stage.delete({
@@ -168,10 +171,11 @@ export class StagesService {
     });
   }
 
-  async reorder(objectId: string, tenantId: string, stageIds: string[]) {
-    // Проверяем, что объект принадлежит тенанту
+  async reorder(objectId: string, tenantId: string | null, stageIds: string[]) {
+    // Проверяем, что объект существует (SUPERADMIN с tenantId=null может работать со всеми)
+    const whereClause = tenantId ? { id: objectId, tenantId } : { id: objectId };
     const object = await this.prisma.object.findFirst({
-      where: { id: objectId, tenantId },
+      where: whereClause,
     });
 
     if (!object) {

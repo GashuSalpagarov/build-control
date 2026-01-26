@@ -208,17 +208,19 @@ export class ResourceChecksService {
 
   // Получение проверок для календаря (по диапазону дат)
   async findByDateRange(
-    tenantId: string,
+    tenantId: string | null,
     objectId: string,
     startDate: string,
     endDate: string,
   ) {
+    // SUPERADMIN (tenantId = null) может видеть все проверки
+    const stageWhereClause = tenantId
+      ? { objectId, object: { tenantId } }
+      : { objectId };
+
     return this.prisma.resourceCheck.findMany({
       where: {
-        stage: {
-          objectId,
-          object: { tenantId },
-        },
+        stage: stageWhereClause,
         date: {
           gte: new Date(startDate),
           lte: new Date(endDate),

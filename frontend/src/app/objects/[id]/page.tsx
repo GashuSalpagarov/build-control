@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -9,7 +9,7 @@ import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi 
 import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, TrendingUp, TrendingDown, Minus, Package, Wallet } from 'lucide-react';
 import { StageFormDialog } from '@/components/stages/stage-form-dialog';
 import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
 
@@ -35,7 +35,9 @@ function generateDates(start: Date, days: number) {
 }
 
 function formatDate(date: Date) {
-  return date.toLocaleDateString('ru-RU', { day: 'numeric' });
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${day}.${month}`;
 }
 
 function formatDayOfWeek(date: Date) {
@@ -231,19 +233,8 @@ export default function ObjectDetailPage() {
 
   const canEdit = user ? ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role) : false;
 
-  const headerAction = useMemo(() => {
-    if (!canEdit) return undefined;
-    return (
-      <Button onClick={handleAddStage}>
-        <Plus className="w-4 h-4 mr-2" />
-        Добавить этап
-      </Button>
-    );
-  }, [canEdit]);
-
   usePageHeader({
-    title: object?.name || 'Загрузка...',
-    action: headerAction,
+    title: 'График работ - Календарный план',
   });
 
   if (authLoading || !user) {
@@ -275,180 +266,159 @@ export default function ObjectDetailPage() {
   }
 
   return (
-    <div className="flex-1 bg-background">
-      <main className="max-w-full mx-auto px-4 py-6">
+    <div className="flex-1 min-w-0 bg-background">
+      <main className="w-full px-4 py-6">
         {/* Навигация */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/objects"
-              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              К списку объектов
-            </Link>
-            <span className="text-gray-300">|</span>
-            <span className="text-sm text-gray-500">{object.address || 'Адрес не указан'}</span>
-          </div>
+        <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
+          <Link
+            href="/objects"
+            className="inline-flex items-center hover:text-gray-700"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Объекты
+          </Link>
+          <span>/</span>
+          <span className="text-gray-700 font-medium">{object.name}</span>
+          <span className="text-gray-300 mx-1">•</span>
+          <span>{object.address || 'Адрес не указан'}</span>
           {canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsObjectDialogOpen(true)}
-            >
-              <Pencil className="w-4 h-4 mr-1" />
-              Редактировать
-            </Button>
+            <>
+              <span className="text-gray-300 mx-1">•</span>
+              <button
+                onClick={() => setIsObjectDialogOpen(true)}
+                className="inline-flex items-center text-primary hover:underline"
+              >
+                <Pencil className="w-3 h-3 mr-1" />
+                Редактировать
+              </button>
+            </>
           )}
         </div>
 
-        {/* Карточки статистики */}
-        {(() => {
-          // Расчёт прогресса и отставания
-          const totalProgress = stages.length > 0
-            ? Math.round(stages.reduce((sum, s) => sum + (s.volumeChecks?.[0]?.percent || 0), 0) / stages.length)
-            : 0;
-
-          // Расчёт планового прогресса на основе дат
-          const today = new Date();
-          let plannedProgress = 0;
-          if (stages.length > 0) {
-            const stageProgressList = stages.map((s) => {
-              if (!s.startDate || !s.endDate) return 0;
-              const start = new Date(s.startDate);
-              const end = new Date(s.endDate);
-              if (today < start) return 0;
-              if (today > end) return 100;
-              const total = end.getTime() - start.getTime();
-              const elapsed = today.getTime() - start.getTime();
-              return Math.round((elapsed / total) * 100);
-            });
-            plannedProgress = Math.round(stageProgressList.reduce((a, b) => a + b, 0) / stages.length);
-          }
-
-          const deviation = totalProgress - plannedProgress;
-
-          // Подсчёт завершённых этапов (прогресс >= 100%)
-          const completedStages = stages.filter((s) => (s.volumeChecks?.[0]?.percent || 0) >= 100).length;
-
-          // Освоено средств из paymentSummary
-          const financialPercent = paymentSummary?.percentPaid || 0;
-
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">Общий прогресс</div>
-                <div className="text-3xl font-bold text-indigo-600">{totalProgress}%</div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">Завершено этапов</div>
-                <div className="text-3xl font-bold text-gray-700">
-                  {completedStages}/{stages.length}
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">План на сегодня</div>
-                <div className="text-3xl font-bold text-gray-700">{plannedProgress}%</div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">Отклонение</div>
-                <div className={`text-3xl font-bold flex items-center gap-2 ${
-                  deviation > 0 ? 'text-green-600' : deviation < 0 ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {deviation > 0 ? <TrendingUp className="w-6 h-6" /> : deviation < 0 ? <TrendingDown className="w-6 h-6" /> : <Minus className="w-6 h-6" />}
-                  {deviation > 0 ? '+' : ''}{deviation}%
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">Освоено средств</div>
-                <div className={`text-3xl font-bold ${
-                  financialPercent >= 80 ? 'text-green-600' : financialPercent >= 50 ? 'text-blue-600' : 'text-gray-600'
-                }`}>
-                  {financialPercent}%
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="text-sm text-gray-500 mb-1">Статус</div>
-                <Badge className={`text-base px-3 py-1 ${
-                  deviation >= 0 ? 'bg-[#4CAF50] text-white' : deviation >= -10 ? 'bg-[#FF9800] text-white' : 'bg-[#F44336] text-white'
-                }`}>
-                  {deviation >= 0 ? (deviation > 0 ? `Опережаем: +${deviation}%` : 'Успеваем') : deviation >= -10 ? `Отстаём: ${deviation}%` : `Не успеваем: ${deviation}%`}
-                </Badge>
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Таблица-календарь */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {/* Кнопки масштаба */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
-            <span className="text-sm text-gray-500 mr-2">Масштаб:</span>
-            <div className="flex rounded-lg border bg-white overflow-hidden">
-              {[
-                { value: 'days', label: 'По дням' },
-                { value: 'weeks', label: 'По неделям' },
-                { value: 'decades', label: 'По декадам' },
-                { value: 'months', label: 'По месяцам' },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setCalendarScale(option.value as CalendarScale)}
-                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                    calendarScale === option.value
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+          {/* Кнопки масштаба и статистика */}
+          <div className="flex items-center justify-between gap-4 px-4 py-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">Масштаб:</span>
+              <div className="flex gap-1">
+                {[
+                  { value: 'days', label: 'По дням' },
+                  { value: 'weeks', label: 'По неделям' },
+                  { value: 'decades', label: 'По декадам' },
+                  { value: 'months', label: 'По месяцам' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setCalendarScale(option.value as CalendarScale)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarScale === option.value
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
+            {/* Статистика */}
+            {(() => {
+              const totalProgress = stages.length > 0
+                ? Math.round(stages.reduce((sum, s) => sum + (s.volumeChecks?.[0]?.percent || 0), 0) / stages.length)
+                : 0;
+              const today = new Date();
+              let plannedProgress = 0;
+              if (stages.length > 0) {
+                const stageProgressList = stages.map((s) => {
+                  if (!s.startDate || !s.endDate) return 0;
+                  const start = new Date(s.startDate);
+                  const end = new Date(s.endDate);
+                  if (today < start) return 0;
+                  if (today > end) return 100;
+                  const total = end.getTime() - start.getTime();
+                  const elapsed = today.getTime() - start.getTime();
+                  return Math.round((elapsed / total) * 100);
+                });
+                plannedProgress = Math.round(stageProgressList.reduce((a, b) => a + b, 0) / stages.length);
+              }
+              const deviation = totalProgress - plannedProgress;
+              const completedStages = stages.filter((s) => (s.volumeChecks?.[0]?.percent || 0) >= 100).length;
+              const financialPercent = paymentSummary?.percentPaid || 0;
+
+              return (
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Прогресс:</span>
+                    <span className="font-semibold text-primary">{totalProgress}%</span>
+                  </div>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Завершено:</span>
+                    <span className="font-semibold text-gray-700">{completedStages}/{stages.length}</span>
+                  </div>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Отклонение:</span>
+                    <span className={`font-semibold flex items-center gap-1 ${
+                      deviation > 0 ? 'text-green-600' : deviation < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {deviation > 0 ? <TrendingUp className="w-4 h-4" /> : deviation < 0 ? <TrendingDown className="w-4 h-4" /> : null}
+                      {deviation > 0 ? '+' : ''}{deviation}%
+                    </span>
+                  </div>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Освоено:</span>
+                    <span className={`font-semibold ${
+                      financialPercent >= 80 ? 'text-green-600' : financialPercent >= 50 ? 'text-primary' : 'text-gray-700'
+                    }`}>
+                      {financialPercent}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[1200px]">
               <thead>
                 {/* Заголовок с датами */}
-                <tr className="bg-gray-50 border-b">
-                  <th className="sticky left-0 bg-gray-50 z-10 px-4 py-3 text-left text-sm font-semibold text-gray-700 min-w-[200px] border-r">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Этап работ
-                    </div>
-                  </th>
-                  <th className="px-2 py-1 text-center text-xs font-medium text-gray-500 min-w-[60px] border-r">
-                    <div className="flex items-center justify-center gap-1">
-                      <Users className="w-3 h-3" />
-                      Люди
-                    </div>
-                  </th>
-                  <th className="px-2 py-1 text-center text-xs font-medium text-gray-500 min-w-[60px] border-r">
-                    <div className="flex items-center justify-center gap-1">
-                      <Truck className="w-3 h-3" />
-                      Техника
+                <tr className="bg-primary text-primary-foreground">
+                  <th className="sticky left-0 bg-primary z-10 px-4 py-2 text-left text-sm font-semibold min-w-[300px] border-r border-white/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Этап работ
+                      </div>
+                      {canEdit && (
+                        <button
+                          className="flex items-center gap-1 text-xs font-medium text-white/90 hover:text-white transition-colors"
+                          onClick={handleAddStage}
+                        >
+                          <Plus className="w-4 h-4" />
+                          Добавить
+                        </button>
+                      )}
                     </div>
                   </th>
                   {periods.map((period, i) => (
                     <th
                       key={i}
-                      className={`px-1 py-2 text-center ${
-                        calendarScale === 'days' ? 'min-w-[40px]' : 'min-w-[60px]'
-                      } ${period.isWeekend ? 'bg-gray-100' : ''} ${
-                        period.isToday ? 'bg-indigo-100' : ''
+                      className={`px-1 py-2 text-center border-r border-white/20 ${
+                        calendarScale === 'days' ? 'min-w-[90px]' : 'min-w-[100px]'
+                      } ${period.isWeekend ? 'bg-black/10' : ''} ${
+                        period.isToday ? 'bg-white/20' : ''
                       }`}
                     >
-                      {period.subLabel && (
-                        <div className="text-xs font-medium text-gray-500">
+                      <div className="text-xs font-semibold">
+                        {period.label}
+                      </div>
+                      {period.subLabel && calendarScale === 'days' && (
+                        <div className="text-[10px] opacity-75">
                           {period.subLabel}
                         </div>
                       )}
-                      <div
-                        className={`text-sm font-semibold ${
-                          period.isToday ? 'text-indigo-600' : 'text-gray-700'
-                        }`}
-                      >
-                        {period.label}
-                      </div>
                     </th>
                   ))}
                 </tr>
@@ -456,201 +426,201 @@ export default function ObjectDetailPage() {
               <tbody>
                 {stages.length === 0 ? (
                   <tr>
-                    <td colSpan={3 + periods.length} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={1 + periods.length} className="px-4 py-8 text-center text-gray-500">
                       Этапы работ не добавлены
                     </td>
                   </tr>
                 ) : (
-                  stages.map((stage) => {
+                  stages.map((stage, stageIndex) => {
                     const lastVolumeCheck = stage.volumeChecks?.[0];
                     const progress = lastVolumeCheck?.percent || 0;
+                    const stageBudget = (stage as any).budget;
+
+                    // Вычисляем индексы начала и конца периода этапа
+                    const startIdx = periods.findIndex(p => isPeriodInRange(p, stage.startDate, stage.endDate));
+                    const endIdx = periods.reduce((last, p, i) => isPeriodInRange(p, stage.startDate, stage.endDate) ? i : last, -1);
+                    const spanCount = startIdx >= 0 && endIdx >= 0 ? endIdx - startIdx + 1 : 0;
 
                     return (
-                      <tr key={stage.id} className="border-b hover:bg-gray-50">
-                        {/* Название этапа */}
-                        <td className="sticky left-0 bg-white z-10 px-4 py-3 border-r">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0 mr-2">
-                              <div className="font-medium text-gray-900">
-                                {stage.name}
-                              </div>
-                              {/* Прогресс-бар с процентом внутри */}
-                              <div className="mt-1 relative h-5 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${
-                                    progress >= 80
-                                      ? 'bg-gradient-to-r from-green-400 to-green-500'
-                                      : progress >= 50
-                                      ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
-                                      : progress >= 20
-                                      ? 'bg-gradient-to-r from-orange-400 to-orange-500'
-                                      : 'bg-gradient-to-r from-red-400 to-red-500'
-                                  }`}
-                                  style={{ width: `${Math.max(progress, 0)}%` }}
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className={`text-xs font-semibold ${progress >= 50 ? 'text-white' : 'text-gray-700'}`}>
-                                    {progress}%
-                                  </span>
+                      <React.Fragment key={stage.id}>
+                        {/* Строка с прогресс-баром */}
+                        <tr className="border-b border-gray-100">
+                          {/* Название этапа */}
+                          <td rowSpan={2} className="sticky left-0 bg-white z-10 px-4 py-3 border-r align-top">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0 mr-2">
+                                <div className="font-medium text-gray-900">
+                                  {stageIndex + 1}. {stage.name}
+                                </div>
+                                {stageBudget && (
+                                  <div className="text-xs text-gray-500">
+                                    {Number(stageBudget).toLocaleString('ru-RU')} ₽
+                                  </div>
+                                )}
+                                {/* Бейджи Объём и Финансы */}
+                                <div className="mt-2 flex gap-2 text-xs">
+                                  {(() => {
+                                    const volStage = volumeSummary?.stages.find(s => s.stageId === stage.id);
+                                    const payStage = paymentSummary?.stages.find(s => s.stageId === stage.id);
+                                    const volPercent = volStage?.percent || 0;
+                                    const payPercent = payStage?.percentPaid || 0;
+                                    return (
+                                      <>
+                                        <div className={`flex items-center gap-1 cursor-pointer hover:opacity-70 ${
+                                          volPercent >= 100 ? 'text-green-600' : volPercent >= 50 ? 'text-yellow-600' : 'text-gray-500'
+                                        }`}>
+                                          <Package className="w-3.5 h-3.5" />
+                                          <span>{volPercent}%</span>
+                                          <span className="text-gray-400">({volStage?.checksCount || 0})</span>
+                                        </div>
+                                        <div className={`flex items-center gap-1 cursor-pointer hover:opacity-70 ${
+                                          payPercent >= 100 ? 'text-green-600' : payPercent >= 50 ? 'text-primary' : 'text-gray-500'
+                                        }`}>
+                                          <Wallet className="w-3.5 h-3.5" />
+                                          <span>{payPercent}%</span>
+                                          <span className="text-gray-400">({payStage?.paymentsCount || 0})</span>
+                                        </div>
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               </div>
-                              {/* Бейджи Объём и Финансы */}
-                              <div className="mt-1 flex gap-1 flex-wrap">
-                                {(() => {
-                                  const volStage = volumeSummary?.stages.find(s => s.stageId === stage.id);
-                                  const payStage = paymentSummary?.stages.find(s => s.stageId === stage.id);
-                                  return (
-                                    <>
-                                      {volStage && (
-                                        <Badge className={`text-[10px] px-1.5 py-0 ${
-                                          volStage.percent >= 100
-                                            ? 'bg-green-100 text-green-700'
-                                            : volStage.percent >= 50
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-red-100 text-red-700'
-                                        }`}>
-                                          Объём: {volStage.percent}%
-                                        </Badge>
-                                      )}
-                                      {payStage && (
-                                        <Badge className={`text-[10px] px-1.5 py-0 ${
-                                          payStage.percentPaid >= 100
-                                            ? 'bg-green-100 text-green-700'
-                                            : payStage.percentPaid >= 50
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : 'bg-gray-100 text-gray-700'
-                                        }`}>
-                                          Финансы: {payStage.percentPaid}%
-                                        </Badge>
-                                      )}
-                                    </>
-                                  );
-                                })()}
-                              </div>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditStage(stage)}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                              )}
                             </div>
-                            {canEdit && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditStage(stage)}
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                        {/* План/факт людей */}
-                        {(() => {
-                          const stageChecks = resourceChecks.filter((c) => c.stageId === stage.id);
-                          const plannedPeople = stage.plannedPeople || 0;
-                          const avgPeople = stageChecks.length > 0
-                            ? Math.round(stageChecks.reduce((sum, c) => sum + (c.actualPeople || 0), 0) / stageChecks.length)
-                            : null;
+                          </td>
+                          {/* Ячейки прогресс-бара */}
+                          {periods.map((period, i) => {
+                            const isStart = i === startIdx;
+                            const inRange = i >= startIdx && i <= endIdx && startIdx >= 0;
 
-                          return (
-                            <td className="px-2 py-2 text-center border-r">
-                              <div className="text-xs">
-                                <span className="text-gray-400">план:</span>{' '}
-                                <span className="font-medium">{plannedPeople || '—'}</span>
-                              </div>
-                              <div className={`text-xs ${avgPeople === null ? 'text-gray-400' : avgPeople >= plannedPeople ? 'text-green-600' : 'text-red-600'}`}>
-                                <span className="text-gray-400">факт:</span>{' '}
-                                <span className="font-medium">{avgPeople ?? '—'}</span>
-                              </div>
-                            </td>
-                          );
-                        })()}
-                        {/* План/факт техники */}
-                        {(() => {
-                          const stageChecks = resourceChecks.filter((c) => c.stageId === stage.id);
-                          const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
-                          const avgEquipment = stageChecks.length > 0
-                            ? Math.round(
-                                stageChecks.reduce(
-                                  (sum, c) => sum + c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0),
-                                  0
-                                ) / stageChecks.length
-                              )
-                            : null;
+                            // Пропускаем ячейки внутри span (кроме первой)
+                            if (inRange && !isStart) return null;
 
-                          return (
-                            <td className="px-2 py-2 text-center border-r">
-                              <div className="text-xs">
-                                <span className="text-gray-400">план:</span>{' '}
-                                <span className="font-medium">{plannedEquipment || '—'}</span>
-                              </div>
-                              <div className={`text-xs ${avgEquipment === null ? 'text-gray-400' : avgEquipment >= plannedEquipment ? 'text-green-600' : 'text-red-600'}`}>
-                                <span className="text-gray-400">факт:</span>{' '}
-                                <span className="font-medium">{avgEquipment ?? '—'}</span>
-                              </div>
-                            </td>
-                          );
-                        })()}
-                        {/* Ячейки календаря */}
-                        {periods.map((period, i) => {
-                          const inRange = isPeriodInRange(period, stage.startDate, stage.endDate);
-                          const plannedPeople = stage.plannedPeople || 0;
-                          const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
-
-                          // Ищем проверки для этого этапа в данном периоде
-                          const periodChecks = resourceChecks.filter(
-                            (check) =>
-                              check.stageId === stage.id &&
-                              period.dates.some(
-                                (d) => d.toISOString().split('T')[0] === check.date.split('T')[0]
-                              )
-                          );
-
-                          // Суммируем факт по всем проверкам в периоде
-                          let actualPeople: number | null = null;
-                          let actualEquipment: number | null = null;
-
-                          if (periodChecks.length > 0) {
-                            // Берём среднее или последнее значение
-                            const totalPeople = periodChecks.reduce(
-                              (sum, c) => sum + (c.actualPeople || 0),
-                              0
-                            );
-                            actualPeople = Math.round(totalPeople / periodChecks.length);
-
-                            const totalEquipment = periodChecks.reduce(
-                              (sum, c) =>
-                                sum +
-                                c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0),
-                              0
-                            );
-                            actualEquipment = Math.round(totalEquipment / periodChecks.length);
-                          }
-
-                          return (
-                            <td
-                              key={i}
-                              className={`px-1 py-1 text-center align-top ${
-                                period.isWeekend ? 'bg-gray-50' : ''
-                              } ${period.isToday ? 'bg-indigo-50' : ''}`}
-                            >
-                              {inRange && (
-                                <div className="min-h-[50px] bg-indigo-100 rounded-sm p-1 border border-indigo-200">
-                                  <div className="text-[10px] leading-tight">
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-500">Л:</span>
-                                      <span className={actualPeople === null ? 'text-gray-400' : actualPeople >= plannedPeople ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                                        {actualPeople ?? '—'}/{plannedPeople}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-500">Т:</span>
-                                      <span className={actualEquipment === null ? 'text-gray-400' : actualEquipment >= plannedEquipment ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                                        {actualEquipment ?? '—'}/{plannedEquipment}
+                            if (isStart && spanCount > 0) {
+                              return (
+                                <td
+                                  key={i}
+                                  colSpan={spanCount}
+                                  className="px-1 py-1 align-middle"
+                                >
+                                  <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${
+                                        progress >= 80
+                                          ? 'bg-gradient-to-r from-green-400 to-green-500'
+                                          : progress >= 50
+                                          ? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+                                          : progress >= 20
+                                          ? 'bg-gradient-to-r from-orange-400 to-orange-500'
+                                          : 'bg-gradient-to-r from-red-400 to-red-500'
+                                      }`}
+                                      style={{ width: `${Math.max(progress, 0)}%` }}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className={`text-xs font-bold ${progress >= 45 ? 'text-white' : 'text-gray-700'}`}>
+                                        {progress}%
                                       </span>
                                     </div>
                                   </div>
-                                </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
+                                </td>
+                              );
+                            }
+
+                            // Пустые ячейки вне диапазона
+                            return (
+                              <td
+                                key={i}
+                                className={`px-0.5 py-1 ${
+                                  period.isWeekend ? 'bg-gray-50' : ''
+                                } ${period.isToday ? 'bg-blue-50' : ''}`}
+                              />
+                            );
+                          })}
+                        </tr>
+                        {/* Строка с данными ресурсов */}
+                        <tr className="border-b hover:bg-gray-50">
+                          {/* Ячейки календаря с ресурсами */}
+                          {periods.map((period, i) => {
+                            const inRange = isPeriodInRange(period, stage.startDate, stage.endDate);
+                            const plannedPeople = stage.plannedPeople || 0;
+                            const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
+
+                            // Ищем проверки для этого этапа в данном периоде
+                            const periodChecks = resourceChecks.filter(
+                              (check) =>
+                                check.stageId === stage.id &&
+                                period.dates.some(
+                                  (d) => d.toISOString().split('T')[0] === check.date.split('T')[0]
+                                )
+                            );
+
+                            // Суммируем факт по всем проверкам в периоде
+                            let actualPeople: number | null = null;
+                            let actualEquipment: number | null = null;
+
+                            if (periodChecks.length > 0) {
+                              const totalPeople = periodChecks.reduce(
+                                (sum, c) => sum + (c.actualPeople || 0),
+                                0
+                              );
+                              actualPeople = Math.round(totalPeople / periodChecks.length);
+
+                              const totalEquipment = periodChecks.reduce(
+                                (sum, c) =>
+                                  sum +
+                                  c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0),
+                                0
+                              );
+                              actualEquipment = Math.round(totalEquipment / periodChecks.length);
+                            }
+
+                            // Определяем статус
+                            const hasData = actualPeople !== null;
+                            const peopleOk = actualPeople !== null && actualPeople >= plannedPeople;
+                            const equipmentOk = actualEquipment !== null && actualEquipment >= plannedEquipment;
+
+                            return (
+                              <td
+                                key={i}
+                                className={`px-0.5 py-1 text-left align-top ${
+                                  period.isWeekend ? 'bg-gray-50' : ''
+                                } ${period.isToday ? 'bg-blue-50' : ''}`}
+                              >
+                                {inRange && (
+                                  <div className="text-[11px] space-y-0.5 px-1">
+                                    <div className={`flex items-center gap-1 whitespace-nowrap ${
+                                      !hasData ? 'text-gray-400' : peopleOk ? 'text-green-600' : 'text-orange-500'
+                                    }`}>
+                                      <Users className="w-3 h-3 flex-shrink-0" />
+                                      <span>Люди:</span>
+                                      <span className="font-semibold">
+                                        {actualPeople ?? '–'}/{plannedPeople || '–'}
+                                      </span>
+                                    </div>
+                                    <div className={`flex items-center gap-1 whitespace-nowrap ${
+                                      !hasData ? 'text-gray-400' : equipmentOk ? 'text-green-600' : 'text-orange-500'
+                                    }`}>
+                                      <Truck className="w-3 h-3 flex-shrink-0" />
+                                      <span>Техн.:</span>
+                                      <span className="font-semibold">
+                                        {actualEquipment ?? '–'}/{plannedEquipment || '–'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -659,21 +629,6 @@ export default function ObjectDetailPage() {
           </div>
         </div>
 
-        {/* Легенда */}
-        <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-indigo-500 rounded-sm" />
-            <span>Период работ</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-indigo-100 rounded-sm border" />
-            <span>Сегодня</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-100 rounded-sm border" />
-            <span>Выходные</span>
-          </div>
-        </div>
       </main>
 
       {/* Диалог добавления/редактирования этапа */}

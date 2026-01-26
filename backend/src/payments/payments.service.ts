@@ -98,10 +98,11 @@ export class PaymentsService {
   }
 
   // Сводка по объекту
-  async getSummaryByObject(objectId: string, tenantId: string) {
-    // Проверяем доступ к объекту
+  async getSummaryByObject(objectId: string, tenantId: string | null) {
+    // Проверяем доступ к объекту (SUPERADMIN с tenantId=null может видеть все)
+    const whereClause = tenantId ? { id: objectId, tenantId } : { id: objectId };
     const object = await this.prisma.object.findFirst({
-      where: { id: objectId, tenantId },
+      where: whereClause,
       include: {
         stages: {
           select: { id: true, name: true, budget: true },

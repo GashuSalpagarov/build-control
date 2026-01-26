@@ -23,7 +23,7 @@ export class ObjectsController {
   constructor(private readonly objectsService: ObjectsService) {}
 
   @Post()
-  @Roles(Role.MINISTER, Role.TECHNADZOR)
+  @Roles(Role.MINISTER, Role.TECHNADZOR, Role.SUPERADMIN)
   create(
     @CurrentUser('tenantId') tenantId: string,
     @Body() dto: CreateObjectDto,
@@ -63,7 +63,7 @@ export class ObjectsController {
   }
 
   @Patch(':id')
-  @Roles(Role.MINISTER, Role.TECHNADZOR)
+  @Roles(Role.MINISTER, Role.TECHNADZOR, Role.SUPERADMIN)
   update(
     @Param('id') id: string,
     @CurrentUser('tenantId') tenantId: string,
@@ -73,7 +73,7 @@ export class ObjectsController {
   }
 
   @Delete(':id')
-  @Roles(Role.MINISTER)
+  @Roles(Role.MINISTER, Role.SUPERADMIN)
   remove(
     @Param('id') id: string,
     @CurrentUser('tenantId') tenantId: string,

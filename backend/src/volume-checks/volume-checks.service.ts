@@ -156,9 +156,11 @@ export class VolumeChecksService {
   }
 
   // Сводка по объекту
-  async getSummaryByObject(objectId: string, tenantId: string) {
+  async getSummaryByObject(objectId: string, tenantId: string | null) {
+    // SUPERADMIN (tenantId = null) может видеть все объекты
+    const whereClause = tenantId ? { id: objectId, tenantId } : { id: objectId };
     const object = await this.prisma.object.findFirst({
-      where: { id: objectId, tenantId },
+      where: whereClause,
       include: {
         stages: {
           include: {

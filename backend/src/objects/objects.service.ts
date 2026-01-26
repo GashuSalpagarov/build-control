@@ -8,10 +8,20 @@ import { Role } from '@prisma/client';
 export class ObjectsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(tenantId: string, dto: CreateObjectDto) {
+  async create(tenantId: string | null, dto: CreateObjectDto) {
+    // Если tenantId не указан (SUPERADMIN), используем первый доступный tenant
+    let effectiveTenantId = tenantId;
+    if (!effectiveTenantId) {
+      const defaultTenant = await this.prisma.tenant.findFirst();
+      if (!defaultTenant) {
+        throw new ForbiddenException('Нет доступных организаций для создания объекта');
+      }
+      effectiveTenantId = defaultTenant.id;
+    }
+
     return this.prisma.object.create({
       data: {
-        tenantId,
+        tenantId: effectiveTenantId,
         name: dto.name,
         address: dto.address,
         contractorId: dto.contractorId,
@@ -80,9 +90,12 @@ export class ObjectsService {
     });
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenantId: string | null) {
+    // SUPERADMIN (tenantId = null) может видеть все объекты
+    const whereClause = tenantId ? { id, tenantId } : { id };
+
     const object = await this.prisma.object.findFirst({
-      where: { id, tenantId },
+      where: whereClause,
       include: {
         contractor: true,
         stages: {
@@ -103,7 +116,7 @@ export class ObjectsService {
     return object;
   }
 
-  async update(id: string, tenantId: string, dto: UpdateObjectDto) {
+  async update(id: string, tenantId: string | null, dto: UpdateObjectDto) {
     await this.findOne(id, tenantId);
 
     return this.prisma.object.update({
@@ -126,7 +139,7 @@ export class ObjectsService {
     });
   }
 
-  async remove(id: string, tenantId: string) {
+  async remove(id: string, tenantId: string | null) {
     await this.findOne(id, tenantId);
 
     return this.prisma.object.delete({
@@ -135,9 +148,11 @@ export class ObjectsService {
   }
 
   // Расчёт прогресса объекта на основе проверок объёмов
-  async calculateProgress(id: string, tenantId: string) {
+  async calculateProgress(id: string, tenantId: string | null) {
+    const whereClause = tenantId ? { id, tenantId } : { id };
+
     const object = await this.prisma.object.findFirst({
-      where: { id, tenantId },
+      where: whereClause,
       include: {
         stages: {
           include: {
@@ -167,13 +182,16 @@ export class ObjectsService {
   }
 
   // Статистика для дашборда
-  async getDashboardStats(tenantId: string) {
+  async getDashboardStats(tenantId: string | null) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Получаем все объекты с этапами и проверками
+    // SUPERADMIN (tenantId = null) видит все объекты
+    const whereClause = tenantId ? { tenantId } : {};
+
     const objects = await this.prisma.object.findMany({
-      where: { tenantId },
+      where: whereClause,
       include: {
         contractor: true,
         stages: {
@@ -295,8 +313,9 @@ export class ObjectsService {
     }
 
     // Статистика по подрядчикам
+    const contractorWhereClause = tenantId ? { tenantId } : {};
     const contractors = await this.prisma.contractor.findMany({
-      where: { tenantId },
+      where: contractorWhereClause,
       include: {
         _count: { select: { objects: true } },
       },
@@ -309,9 +328,10 @@ export class ObjectsService {
     }));
 
     // Статистика по обращениям
+    const appealWhereClause = tenantId ? { object: { tenantId } } : {};
     const appealStats = await this.prisma.appeal.groupBy({
       by: ['status'],
-      where: { object: { tenantId } },
+      where: appealWhereClause,
       _count: true,
     });
 
