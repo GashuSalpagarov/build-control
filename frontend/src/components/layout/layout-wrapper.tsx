@@ -24,10 +24,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-primary text-primary-foreground">
             <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger />
-              <Separator orientation="vertical" className="h-4" />
+              <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+              <Separator orientation="vertical" className="h-4 bg-primary-foreground/20" />
             </div>
             <PageHeader />
           </header>

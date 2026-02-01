@@ -25,7 +25,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
-  LayoutDashboard,
   Building2,
   ClipboardCheck,
   Scale,
@@ -67,10 +66,7 @@ export function AppSidebar() {
   const canManagePayments = ['ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canCheckVolumes = ['TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canViewAppeals = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
-  const canViewDashboard = ['MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
-
   const navItems = [
-    { href: '/dashboard', label: 'Дашборд', icon: LayoutDashboard, show: canViewDashboard },
     { href: '/objects', label: 'Объекты', icon: Building2, show: true },
     { href: '/inspector', label: 'Проверки', icon: ClipboardCheck, show: canInspect },
     { href: '/volumes', label: 'Объёмы', icon: Scale, show: canCheckVolumes },
@@ -159,8 +155,9 @@ export function AppSidebar() {
               <DropdownMenuContent
                 className="min-w-56 rounded-lg"
                 side="top"
-                align="end"
-                sideOffset={2}
+                align="start"
+                sideOffset={8}
+                alignOffset={16}
               >
                 <DropdownMenuLabel className="px-2 py-1.5">
                   <div className="grid text-left text-sm leading-tight">
@@ -170,16 +167,6 @@ export function AppSidebar() {
                     </span>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2" />
-                  Профиль
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Настройки
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                   <LogOut className="w-4 h-4 mr-2" />
                   Выйти

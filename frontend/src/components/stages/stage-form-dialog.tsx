@@ -45,6 +45,8 @@ interface StageFormDialogProps {
   objectId: string;
   stage?: Stage | null;
   onSuccess: () => void;
+  objectStartDate?: string;
+  objectEndDate?: string;
 }
 
 export function StageFormDialog({
@@ -53,6 +55,8 @@ export function StageFormDialog({
   objectId,
   stage,
   onSuccess,
+  objectStartDate,
+  objectEndDate,
 }: StageFormDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -187,11 +191,23 @@ export function StageFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Дата начала</Label>
-              <Input id="startDate" type="date" {...register('startDate')} />
+              <Input
+                id="startDate"
+                type="date"
+                {...register('startDate')}
+                min={objectStartDate?.split('T')[0]}
+                max={objectEndDate?.split('T')[0]}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">Дата окончания</Label>
-              <Input id="endDate" type="date" {...register('endDate')} />
+              <Input
+                id="endDate"
+                type="date"
+                {...register('endDate')}
+                min={objectStartDate?.split('T')[0]}
+                max={objectEndDate?.split('T')[0]}
+              />
             </div>
           </div>
 

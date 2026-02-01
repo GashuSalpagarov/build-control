@@ -17,10 +17,7 @@ export function Header() {
   const canManagePayments = user && ['ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canCheckVolumes = user && ['TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canViewAppeals = user && ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
-  const canViewDashboard = user && ['MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
-
   const navItems = [
-    { href: '/dashboard', label: 'Дашборд', show: canViewDashboard },
     { href: '/objects', label: 'Объекты', show: true },
     { href: '/inspector', label: 'Проверки', show: canInspect },
     { href: '/volumes', label: 'Объёмы', show: canCheckVolumes },

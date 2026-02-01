@@ -11,7 +11,7 @@ export function PageHeader() {
 
   return (
     <div className="flex flex-1 items-center justify-between px-4">
-      <h1 className="text-lg font-semibold text-gray-900">{headerData.title}</h1>
+      <h1 className="text-lg font-semibold text-primary-foreground">{headerData.title}</h1>
       {headerData.action && (
         <div className="flex items-center gap-2">
           {headerData.action}
