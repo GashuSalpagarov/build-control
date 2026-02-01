@@ -401,8 +401,19 @@ export default function ObjectDetailPage() {
 
   const canEdit = user ? ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role) : false;
 
+  const headerAction = useMemo(() => (
+    <Link
+      href="/objects"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded transition-colors"
+    >
+      <ArrowLeft className="w-4 h-4" />
+      К объектам
+    </Link>
+  ), []);
+
   usePageHeader({
     title: 'График работ - Календарный план',
+    action: headerAction,
   });
 
   if (authLoading || !user) {
@@ -785,8 +796,8 @@ export default function ObjectDetailPage() {
                                     {separatorPositions.map((pos, idx) => (
                                       <div
                                         key={idx}
-                                        className="absolute inset-y-0 w-0.5 bg-white z-10"
-                                        style={{ left: `calc(${pos}% + 2px)` }}
+                                        className="absolute inset-y-0 w-1 bg-white z-10"
+                                        style={{ left: `calc(${pos}% + 1px)` }}
                                         title={`Продление ${idx + 1}`}
                                       />
                                     ))}
