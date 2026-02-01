@@ -8,7 +8,6 @@ import { usePageHeader } from '@/hooks/use-page-header';
 import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi } from '@/lib/api';
 import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, Package, Wallet, Maximize2, Minimize2, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { StageFormDialog } from '@/components/stages/stage-form-dialog';
 import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
@@ -226,6 +225,24 @@ function groupDatesByScale(dates: Date[], scale: CalendarScale): CalendarPeriod[
 
 function isPeriodInRange(period: CalendarPeriod, start?: string, end?: string): boolean {
   return period.dates.some((date) => isInRange(date, start, end));
+}
+
+// Get all extensions (where newEndDate > oldEndDate) for visualization
+function getAllExtensions(stage: Stage) {
+  if (!stage.scheduleChanges?.length) return [];
+
+  // Sort by createdAt ascending (oldest first)
+  const sortedChanges = [...stage.scheduleChanges].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  // Filter only extensions (newEndDate > oldEndDate)
+  return sortedChanges.filter(change => {
+    if (change.oldEndDate && change.newEndDate) {
+      return new Date(change.newEndDate) > new Date(change.oldEndDate);
+    }
+    return false;
+  });
 }
 
 export default function ObjectDetailPage() {
@@ -649,25 +666,27 @@ export default function ObjectDetailPage() {
                         {/* Строка с прогресс-баром */}
                         <tr className="border-b border-gray-100">
                           {/* Название этапа */}
-                          <td rowSpan={2} className="sticky left-0 bg-white z-10 px-4 py-3 align-top w-[300px] min-w-[300px] max-w-[300px] relative after:content-[''] after:absolute after:top-0 after:bottom-0 after:left-full after:w-px after:bg-gray-100">
+                          <td rowSpan={2} className="sticky left-0 bg-white z-30 px-4 py-1 align-top w-[300px] min-w-[300px] max-w-[300px] relative after:content-[''] after:absolute after:top-0 after:bottom-0 after:left-full after:w-px after:bg-gray-100">
                             <div className="flex items-start justify-between">
                               <div className="flex-1 min-w-0 mr-2">
-                                <button
-                                  onClick={() => {
-                                    const stageStartIdx = periods.findIndex(p => isPeriodInRange(p, stage.startDate, stage.endDate));
-                                    const headerCell = periodHeaderRefs.current.get(stageStartIdx);
-                                    if (headerCell && tableContainerRef.current) {
-                                      const container = tableContainerRef.current;
-                                      const cellRect = headerCell.getBoundingClientRect();
-                                      const containerRect = container.getBoundingClientRect();
-                                      const scrollLeft = cellRect.left - containerRect.left + container.scrollLeft - 300;
-                                      container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
-                                    }
-                                  }}
-                                  className="font-medium text-gray-900 hover:text-primary cursor-pointer text-left"
-                                >
-                                  {stageIndex + 1}. {stage.name}
-                                </button>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <button
+                                    onClick={() => {
+                                      const stageStartIdx = periods.findIndex(p => isPeriodInRange(p, stage.startDate, stage.endDate));
+                                      const headerCell = periodHeaderRefs.current.get(stageStartIdx);
+                                      if (headerCell && tableContainerRef.current) {
+                                        const container = tableContainerRef.current;
+                                        const cellRect = headerCell.getBoundingClientRect();
+                                        const containerRect = container.getBoundingClientRect();
+                                        const scrollLeft = cellRect.left - containerRect.left + container.scrollLeft - 300;
+                                        container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+                                      }
+                                    }}
+                                    className="font-medium text-gray-900 hover:text-primary cursor-pointer text-left"
+                                  >
+                                    {stageIndex + 1}. {stage.name}
+                                  </button>
+                                </div>
                                 {stageBudget && (
                                   <div className="text-xs text-gray-500">
                                     {Number(stageBudget).toLocaleString('ru-RU')} ₽
@@ -714,6 +733,7 @@ export default function ObjectDetailPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleEditStage(stage)}
+                                  title="Редактировать"
                                 >
                                   <Pencil className="w-3 h-3" />
                                 </Button>
@@ -729,6 +749,31 @@ export default function ObjectDetailPage() {
                             if (inRange && !isStart) return null;
 
                             if (isStart && spanCount > 0) {
+                              // Calculate separator positions aligned to period boundaries
+                              const extensions = getAllExtensions(stage);
+                              const separatorPositions: number[] = [];
+
+                              if (extensions.length > 0 && spanCount > 1) {
+                                extensions.forEach(ext => {
+                                  // Find the period index where extension starts (after oldEndDate)
+                                  const extStartDate = new Date(ext.oldEndDate!);
+                                  extStartDate.setDate(extStartDate.getDate() + 1); // Day after old end
+
+                                  const periodIdx = periods.findIndex((p, idx) =>
+                                    idx >= startIdx && idx <= endIdx &&
+                                    p.dates.some(d => d.toDateString() === extStartDate.toDateString())
+                                  );
+
+                                  if (periodIdx >= startIdx && periodIdx <= endIdx) {
+                                    // Position as percentage: (periodIdx - startIdx) / spanCount * 100
+                                    const positionPercent = ((periodIdx - startIdx) / spanCount) * 100;
+                                    if (positionPercent > 0 && positionPercent < 100 && !separatorPositions.includes(positionPercent)) {
+                                      separatorPositions.push(positionPercent);
+                                    }
+                                  }
+                                });
+                              }
+
                               return (
                                 <td
                                   key={i}
@@ -736,8 +781,18 @@ export default function ObjectDetailPage() {
                                   className="px-1 py-1 align-middle"
                                 >
                                   <div className={`relative ${zoom.progressHeight} bg-gray-200 rounded-full overflow-hidden`}>
+                                    {/* Vertical separators at extension boundaries */}
+                                    {separatorPositions.map((pos, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="absolute inset-y-0 w-0.5 bg-white z-10"
+                                        style={{ left: `calc(${pos}% + 2px)` }}
+                                        title={`Продление ${idx + 1}`}
+                                      />
+                                    ))}
+                                    {/* Progress bar */}
                                     <div
-                                      className={`h-full rounded-full transition-all ${
+                                      className={`h-full rounded-full transition-all relative z-10 ${
                                         progress >= 80
                                           ? 'bg-gradient-to-r from-green-400 to-green-500'
                                           : progress >= 50
@@ -748,7 +803,7 @@ export default function ObjectDetailPage() {
                                       }`}
                                       style={{ width: `${Math.max(progress, 0)}%` }}
                                     />
-                                    <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="absolute inset-0 flex items-center justify-center z-20">
                                       <span className={`${zoom.progressText} font-bold ${progress >= 45 ? 'text-white' : 'text-gray-700'}`}>
                                         {progress}%
                                       </span>
@@ -1036,6 +1091,7 @@ export default function ObjectDetailPage() {
           })()}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

@@ -120,6 +120,7 @@ import type {
   Payment, CreatePaymentDto, PaymentObjectSummary,
   VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary,
   Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus,
+  StageScheduleChange, ExtendStageDto,
 } from './types';
 
 export interface CreateObjectDto {
@@ -163,6 +164,10 @@ export const stagesApi = {
   delete: (id: string) => api.delete(`/stages/${id}`),
   reorder: (objectId: string, stageIds: string[]) =>
     api.patch<Stage[]>(`/stages/reorder/${objectId}`, { stageIds }),
+  extendSchedule: (id: string, data: ExtendStageDto) =>
+    api.post<Stage>(`/stages/${id}/extend`, data),
+  getScheduleHistory: (id: string) =>
+    api.get<StageScheduleChange[]>(`/stages/${id}/schedule-history`),
 };
 
 // Equipment Types API

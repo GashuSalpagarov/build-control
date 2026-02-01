@@ -12,6 +12,7 @@ import {
 import { StagesService } from './stages.service';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
+import { ExtendStageDto } from './dto/extend-stage.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -75,5 +76,24 @@ export class StagesController {
     @Body('stageIds') stageIds: string[],
   ) {
     return this.stagesService.reorder(objectId, tenantId, stageIds);
+  }
+
+  @Post(':id/extend')
+  @Roles(Role.MINISTER, Role.TECHNADZOR)
+  extendSchedule(
+    @Param('id') id: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: ExtendStageDto,
+  ) {
+    return this.stagesService.extendSchedule(id, tenantId, userId, dto);
+  }
+
+  @Get(':id/schedule-history')
+  getScheduleHistory(
+    @Param('id') id: string,
+    @CurrentUser('tenantId') tenantId: string,
+  ) {
+    return this.stagesService.getScheduleHistory(id, tenantId);
   }
 }

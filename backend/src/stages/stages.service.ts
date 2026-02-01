@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
+import { ExtendStageDto } from './dto/extend-stage.dto';
 
 @Injectable()
 export class StagesService {
@@ -81,6 +82,10 @@ export class StagesService {
         volumeChecks: {
           orderBy: { date: 'desc' },
           take: 1,
+        },
+        scheduleChanges: {
+          orderBy: { createdAt: 'desc' },
+          include: { user: { select: { id: true, name: true } } },
         },
       },
       orderBy: { sortOrder: 'asc' },
@@ -193,5 +198,57 @@ export class StagesService {
     );
 
     return this.findAllByObject(objectId, tenantId);
+  }
+
+  async extendSchedule(
+    stageId: string,
+    tenantId: string | null,
+    userId: string,
+    dto: ExtendStageDto,
+  ) {
+    const stage = await this.findOne(stageId, tenantId);
+
+    // Записываем в историю изменений
+    await this.prisma.stageScheduleChange.create({
+      data: {
+        stageId,
+        userId,
+        oldStartDate: stage.startDate,
+        oldEndDate: stage.endDate,
+        newStartDate: dto.newStartDate ? new Date(dto.newStartDate) : stage.startDate,
+        newEndDate: new Date(dto.newEndDate),
+        reason: dto.reason,
+      },
+    });
+
+    // Обновляем этап
+    return this.prisma.stage.update({
+      where: { id: stageId },
+      data: {
+        startDate: dto.newStartDate ? new Date(dto.newStartDate) : undefined,
+        endDate: new Date(dto.newEndDate),
+      },
+      include: {
+        plannedEquipment: {
+          include: { equipmentType: true },
+        },
+        scheduleChanges: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { user: { select: { id: true, name: true } } },
+        },
+      },
+    });
+  }
+
+  async getScheduleHistory(stageId: string, tenantId: string | null) {
+    // Проверяем доступ к этапу
+    await this.findOne(stageId, tenantId);
+
+    return this.prisma.stageScheduleChange.findMany({
+      where: { stageId },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }

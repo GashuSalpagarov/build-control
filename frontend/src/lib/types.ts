@@ -195,6 +195,25 @@ export interface VolumeCheckObjectSummary {
   stages: VolumeCheckStageSummary[];
 }
 
+export interface StageScheduleChange {
+  id: string;
+  stageId: string;
+  userId: string;
+  oldStartDate: string | null;
+  oldEndDate: string | null;
+  newStartDate: string | null;
+  newEndDate: string | null;
+  reason: string;
+  createdAt: string;
+  user: { id: string; name: string };
+}
+
+export interface ExtendStageDto {
+  newStartDate?: string;
+  newEndDate: string;
+  reason: string;
+}
+
 export interface Stage {
   id: string;
   objectId: string;
@@ -206,6 +225,7 @@ export interface Stage {
   sortOrder: number;
   plannedEquipment?: PlannedEquipment[];
   volumeChecks?: VolumeCheck[];
+  scheduleChanges?: StageScheduleChange[];
 }
 
 export interface ConstructionObject {

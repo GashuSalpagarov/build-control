@@ -75,6 +75,7 @@ model User {
   payments          Payment[]
   appeals           Appeal[]
   appealMessages    AppealMessage[]
+  scheduleChanges   StageScheduleChange[]
 
   @@index([tenantId])
   @@index([email])
@@ -150,15 +151,37 @@ model Stage {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  object           Object             @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  object           Object                @relation(fields: [objectId], references: [id], onDelete: Cascade)
   plannedEquipment PlannedEquipment[]
   resourceChecks   ResourceCheck[]
   volumeChecks     VolumeCheck[]
   payments         Payment[]
   appeals          Appeal[]
+  scheduleChanges  StageScheduleChange[]
 
   @@index([objectId])
   @@index([sortOrder])
+}
+
+// История изменений сроков этапа
+model StageScheduleChange {
+  id           String    @id @default(cuid())
+  stageId      String
+  userId       String
+
+  oldStartDate DateTime?
+  oldEndDate   DateTime?
+  newStartDate DateTime?
+  newEndDate   DateTime?
+
+  reason       String    // Обязательная причина изменения
+  createdAt    DateTime  @default(now())
+
+  stage        Stage     @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@index([stageId])
+  @@index([createdAt])
 }
 
 // Справочник типов техники
