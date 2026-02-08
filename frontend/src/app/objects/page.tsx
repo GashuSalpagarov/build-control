@@ -10,7 +10,7 @@ import { ConstructionObject } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ObjectFormDialog } from '@/components/objects/object-form-dialog';
+import { ObjectCreationWizard } from '@/components/objects/object-creation-wizard';
 import { statusStyles, deviationStyles } from '@/lib/design-system';
 
 function formatCurrency(amount: number | undefined | null): string {
@@ -203,7 +203,7 @@ export default function ObjectsPage() {
         </div>
       </main>
 
-      <ObjectFormDialog
+      <ObjectCreationWizard
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSuccess={loadObjects}
