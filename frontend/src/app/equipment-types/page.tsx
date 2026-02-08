@@ -126,7 +126,7 @@ export default function EquipmentTypesPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-3xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {isAdding && (
             <div className="flex items-center gap-2 px-6 py-4 border-b bg-blue-50">

@@ -30,7 +30,7 @@ export function Header() {
 
   return (
     <header className="bg-card border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 min-h-16 flex items-center">
+      <div className="max-w-7xl mx-auto px-4 min-h-12 flex items-center">
         <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Министерство строительства КЧР</h1>

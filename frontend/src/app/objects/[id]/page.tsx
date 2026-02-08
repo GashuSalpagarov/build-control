@@ -427,7 +427,7 @@ export default function ObjectDetailPage() {
   if (isLoading) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-7xl mx-auto px-4 py-6">
+        <main className="max-w-7xl mx-auto p-4">
           <div className="text-gray-500">Загрузка...</div>
         </main>
       </div>
@@ -437,7 +437,7 @@ export default function ObjectDetailPage() {
   if (!object) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-7xl mx-auto px-4 py-6">
+        <main className="max-w-7xl mx-auto p-4">
           <div className="text-gray-500">Объект не найден</div>
         </main>
       </div>
@@ -446,10 +446,10 @@ export default function ObjectDetailPage() {
 
   return (
     <div className="flex-1 min-w-0 bg-background">
-      <main className="w-full px-4 py-6">
+      <main className="w-full p-4">
         {/* Навигация */}
         {!isFullscreen && (
-          <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
+          <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
             <Link
               href="/objects"
               className="inline-flex items-center hover:text-gray-700"

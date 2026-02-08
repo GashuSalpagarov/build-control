@@ -182,7 +182,7 @@ export default function TechnadzorPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto p-4">
         {/* Выбор объекта */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="w-full max-w-md">

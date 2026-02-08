@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ObjectsLoading() {
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto p-4">
         {/* Header skeleton */}
         <div className="flex items-center justify-between mb-6">
           <div>

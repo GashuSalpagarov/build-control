@@ -139,7 +139,7 @@ export default function AppealDetailPage() {
   if (isLoading) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-4xl mx-auto px-4 py-6">
+        <main className="max-w-4xl mx-auto p-4">
           <div className="text-gray-500">Загрузка...</div>
         </main>
       </div>
@@ -149,7 +149,7 @@ export default function AppealDetailPage() {
   if (!appeal) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-4xl mx-auto px-4 py-6">
+        <main className="max-w-4xl mx-auto p-4">
           <div className="text-gray-500">Обращение не найдено</div>
         </main>
       </div>
@@ -161,7 +161,7 @@ export default function AppealDetailPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto p-4">
         {/* Навигация */}
         <Link
           href="/appeals"

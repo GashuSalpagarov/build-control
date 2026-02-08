@@ -86,7 +86,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="h-16 border-b overflow-hidden">
+      <SidebarHeader className="min-h-12 border-b overflow-hidden">
         <div className="flex items-center gap-2 h-full">
           <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={handleHeaderClick}>
             <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground shrink-0">

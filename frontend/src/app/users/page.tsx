@@ -99,7 +99,7 @@ export default function UsersPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="grid grid-cols-[1fr_180px_120px_100px_100px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <div>Пользователь</div>
