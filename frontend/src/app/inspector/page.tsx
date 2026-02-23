@@ -14,16 +14,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { objectsApi, stagesApi, resourceChecksApi } from '@/lib/api';
-import { ConstructionObject, Stage, ResourceCheck } from '@/lib/types';
-import { ResourceCheckFormDialog } from '@/components/resource-checks';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Plus, Calendar, Users, Wrench, MessageSquare } from 'lucide-react';
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { objectsApi, resourceChecksApi } from '@/lib/api';
+import { ConstructionObject, ResourceCheck } from '@/lib/types';
+import { ResourceCheckFormDialog } from '@/components/resource-checks';
+import { Plus, MessageSquare } from 'lucide-react';
 
 export default function InspectorPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -31,7 +39,6 @@ export default function InspectorPage() {
 
   const [objects, setObjects] = useState<ConstructionObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string>('__all__');
-  const [stages, setStages] = useState<Stage[]>([]);
   const [checks, setChecks] = useState<ResourceCheck[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<string>('');
@@ -47,20 +54,6 @@ export default function InspectorPage() {
       setObjects(data);
     } catch (err) {
       console.error('Error loading objects:', err);
-    }
-  }, []);
-
-  // Загрузка этапов выбранного объекта
-  const loadStages = useCallback(async (objectId: string) => {
-    if (objectId === '__all__') {
-      setStages([]);
-      return;
-    }
-    try {
-      const data = await stagesApi.getByObject(objectId);
-      setStages(data);
-    } catch (err) {
-      console.error('Error loading stages:', err);
     }
   }, []);
 
@@ -90,8 +83,8 @@ export default function InspectorPage() {
       return;
     }
 
-    // Проверяем роль - только INSPECTOR, TECHNADZOR, MINISTER, SUPERADMIN
-    if (user && !['INSPECTOR', 'TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role)) {
+    // Проверяем роль - только INSPECTOR, MINISTER, SUPERADMIN
+    if (user && !['INSPECTOR', 'MINISTER', 'SUPERADMIN'].includes(user.role)) {
       router.push('/objects');
       return;
     }
@@ -100,12 +93,6 @@ export default function InspectorPage() {
       loadObjects();
     }
   }, [user, authLoading, router, loadObjects]);
-
-  useEffect(() => {
-    if (selectedObjectId !== '__all__') {
-      loadStages(selectedObjectId);
-    }
-  }, [selectedObjectId, loadStages]);
 
   useEffect(() => {
     if (user) {
@@ -120,10 +107,6 @@ export default function InspectorPage() {
 
   const handleEditCheck = (check: ResourceCheck) => {
     setEditingCheck(check);
-    // Загружаем этапы объекта для редактирования
-    if (check.stage.objectId) {
-      loadStages(check.stage.objectId);
-    }
     setIsFormOpen(true);
   };
 
@@ -131,15 +114,21 @@ export default function InspectorPage() {
     loadChecks();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+  const today = new Date().toISOString().split('T')[0];
+
+  const formatCompactDate = (dateString: string) => {
+    const d = new Date(dateString);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}.${month}`;
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   const headerAction = useMemo(() => (
     <Button onClick={handleCreateCheck}>
@@ -162,185 +151,181 @@ export default function InspectorPage() {
   }
 
   return (
-    <div className="flex-1 bg-background">
-      <main className="max-w-7xl mx-auto p-4">
-        {/* Фильтры */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Объект
-              </label>
-              <Select
-                value={selectedObjectId}
-                onValueChange={setSelectedObjectId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Все объекты" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Все объекты</SelectItem>
-                  {objects.map((obj) => (
-                    <SelectItem key={obj.id} value={obj.id}>
-                      {obj.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Дата
-              </label>
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                max={today}
-              />
-            </div>
-            {dateFilter && (
-              <div className="flex items-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDateFilter('')}
+    <TooltipProvider>
+      <div className="flex-1 bg-background">
+        <main className="max-w-7xl mx-auto p-4">
+          {/* Фильтры */}
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Объект
+                </label>
+                <Select
+                  value={selectedObjectId}
+                  onValueChange={setSelectedObjectId}
                 >
-                  Сбросить
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Все объекты" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Все объекты</SelectItem>
+                    {objects.map((obj) => (
+                      <SelectItem key={obj.id} value={obj.id}>
+                        {obj.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Список проверок */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : checks.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              Проверки не найдены
-            </div>
-          ) : (
-            <div className="divide-y">
-              {checks.map((check) => {
-                const checkDate = check.date.split('T')[0];
-                const isToday = checkDate === today;
-                const totalEquipment = check.equipmentChecks.reduce(
-                  (sum, ec) => sum + ec.quantity,
-                  0
-                );
-
-                return (
-                  <div
-                    key={check.id}
-                    className="p-4 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleEditCheck(check)}
+              <div className="w-[200px]">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Дата
+                </label>
+                <Input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  max={today}
+                />
+              </div>
+              {dateFilter && (
+                <div className="flex items-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDateFilter('')}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-gray-900">
-                            {check.stage.name}
-                          </span>
-                          {isToday && (
-                            <Badge className="bg-green-100 text-green-700">
-                              Сегодня
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(check.date)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {check.actualPeople ?? 0} чел.
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Wrench className="w-4 h-4" />
-                            {totalEquipment} ед. техники
-                          </span>
-                        </div>
-                        {check.comment && (
-                          <div className="flex items-start gap-1 mt-2 text-sm text-gray-500">
-                            <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                            <span>{check.comment}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right text-sm text-gray-500">
-                        <div>{check.user.name}</div>
-                      </div>
-                    </div>
-
-                    {/* Детали техники */}
-                    {check.equipmentChecks.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {check.equipmentChecks.map((ec) => (
-                          <Badge
-                            key={ec.id}
-                            variant="outline"
-                            className="bg-gray-50"
-                          >
-                            {ec.equipmentType.name}: {ec.quantity}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    Сбросить
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </main>
+          </div>
 
-      {/* Диалог формы */}
-      {selectedObjectId !== '__all__' ? (
+          {/* Таблица проверок */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-xs">Дата</TableHead>
+                  <TableHead className="text-xs">Объект</TableHead>
+                  <TableHead className="text-xs">Этап</TableHead>
+                  <TableHead className="text-xs w-[80px]">Люди</TableHead>
+                  <TableHead className="text-xs w-[90px]">Техника</TableHead>
+                  <TableHead className="text-xs w-[140px]">Автор</TableHead>
+                  <TableHead className="text-xs w-[40px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell><div className="h-4 w-20 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-28 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-12 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-12 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-4 bg-muted rounded" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : checks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                      Проверки не найдены
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  checks.map((check) => {
+                    const checkDate = check.date.split('T')[0];
+                    const isToday = checkDate === today;
+                    const totalEquipment = check.equipmentChecks.reduce(
+                      (sum, ec) => sum + ec.quantity,
+                      0
+                    );
+                    const equipmentDetails = check.equipmentChecks
+                      .filter((ec) => ec.quantity > 0)
+                      .map((ec) => `${ec.equipmentType.name}: ${ec.quantity}`)
+                      .join('\n');
+
+                    return (
+                      <TableRow
+                        key={check.id}
+                        className="cursor-pointer"
+                        onClick={() => handleEditCheck(check)}
+                      >
+                        <TableCell className="text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{formatCompactDate(check.date)}</span>
+                            {check.checkedAt && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatTime(check.checkedAt)}
+                              </span>
+                            )}
+                            {isToday && (
+                              <Badge className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0">
+                                Сегодня
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {check.stage.object?.name || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {check.stage.name}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {check.actualPeople ?? 0} чел.
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {totalEquipment > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-default">{totalEquipment} ед.</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="whitespace-pre-line">{equipmentDetails}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-muted-foreground">0 ед.</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {check.user.name}
+                        </TableCell>
+                        <TableCell>
+                          {check.comment && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{check.comment}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </main>
+
+        {/* Единый диалог формы */}
         <ResourceCheckFormDialog
           open={isFormOpen}
           onOpenChange={setIsFormOpen}
-          objectId={selectedObjectId}
-          stages={stages}
+          objects={objects}
           existingCheck={editingCheck}
           onSuccess={handleFormSuccess}
         />
-      ) : (
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Выберите объект</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500">
-                Для создания проверки сначала выберите объект в фильтре.
-              </p>
-              <Select
-                value={selectedObjectId}
-                onValueChange={(value) => {
-                  setSelectedObjectId(value);
-                  if (value !== '__all__') {
-                    loadStages(value);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите объект" />
-                </SelectTrigger>
-                <SelectContent>
-                  {objects.map((obj) => (
-                    <SelectItem key={obj.id} value={obj.id}>
-                      {obj.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

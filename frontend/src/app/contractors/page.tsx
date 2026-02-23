@@ -6,8 +6,16 @@ import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { contractorsApi } from '@/lib/api';
 import { Contractor } from '@/lib/types';
-import { Plus, Pencil, Trash2, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { ContractorFormDialog } from '@/components/contractors/contractor-form-dialog';
 import {
   AlertDialog,
@@ -89,61 +97,72 @@ export default function ContractorsPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-5xl mx-auto p-4">
+      <main className="max-w-7xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="grid grid-cols-[1fr_150px_150px_150px_100px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <div>Название</div>
-            <div>ИНН</div>
-            <div>Телефон</div>
-            <div>Объектов</div>
-            <div></div>
-          </div>
-
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : contractors.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              Подрядчики не найдены
-            </div>
-          ) : (
-            contractors.map((contractor) => (
-              <div
-                key={contractor.id}
-                className="grid grid-cols-[1fr_150px_150px_150px_100px] gap-4 px-6 py-4 border-b last:border-b-0 items-center hover:bg-gray-50"
-              >
-                <div>
-                  <div className="font-semibold text-gray-900">{contractor.name}</div>
-                  {contractor.email && (
-                    <div className="text-sm text-gray-500">{contractor.email}</div>
-                  )}
-                </div>
-                <div className="text-gray-600">{contractor.inn || '—'}</div>
-                <div className="text-gray-600">{contractor.phone || '—'}</div>
-                <div className="text-gray-600">{contractor._count?.objects || 0}</div>
-                <div className="flex gap-1 justify-end">
-                  {canManage && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => { setEditingContractor(contractor); setIsDialogOpen(true); }}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletingContractor(contractor)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-xs">Название</TableHead>
+                <TableHead className="text-xs w-[150px]">ИНН</TableHead>
+                <TableHead className="text-xs w-[150px]">Телефон</TableHead>
+                <TableHead className="text-xs w-[100px]">Объектов</TableHead>
+                {canManage && <TableHead className="text-xs w-[100px]"></TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className="animate-pulse">
+                    <TableCell><div className="h-4 w-40 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-28 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-8 bg-muted rounded" /></TableCell>
+                    {canManage && <TableCell><div className="h-4 w-16 bg-muted rounded ml-auto" /></TableCell>}
+                  </TableRow>
+                ))
+              ) : contractors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={canManage ? 5 : 4} className="h-24 text-center text-muted-foreground">
+                    Подрядчики не найдены
+                  </TableCell>
+                </TableRow>
+              ) : (
+                contractors.map((contractor) => (
+                  <TableRow key={contractor.id}>
+                    <TableCell>
+                      <div className="text-sm font-medium">{contractor.name}</div>
+                      {contractor.email && (
+                        <div className="text-xs text-muted-foreground">{contractor.email}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{contractor.inn || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{contractor.phone || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{contractor._count?.objects || 0}</TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setEditingContractor(contractor); setIsDialogOpen(true); }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingContractor(contractor)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </main>
 

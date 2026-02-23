@@ -35,8 +35,8 @@ import {
   Wrench,
   LogOut,
   User,
-  Settings,
   X,
+  UserX,
 } from 'lucide-react';
 
 const getRoleLabel = (role: string) => {
@@ -53,7 +53,7 @@ const getRoleLabel = (role: string) => {
 };
 
 export function AppSidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isImpersonating, exitImpersonation } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -135,6 +135,20 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {isImpersonating && (
+        <div className="mx-2 mb-2 p-2 bg-amber-100 border border-amber-300 rounded-lg group-data-[collapsible=icon]:hidden">
+          <div className="text-xs font-medium text-amber-800 mb-1">Имперсонация</div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-7 text-xs border-amber-400 text-amber-700 hover:bg-amber-200"
+            onClick={exitImpersonation}
+          >
+            <UserX className="w-3 h-3 mr-1" />
+            Вернуться
+          </Button>
+        </div>
+      )}
       <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>

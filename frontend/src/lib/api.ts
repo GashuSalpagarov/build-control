@@ -111,6 +111,7 @@ export interface User {
 export const authApi = {
   login: (data: LoginRequest) => api.post<LoginResponse>('/auth/login', data),
   me: () => api.get<User>('/auth/me'),
+  impersonate: (userId: string) => api.post<LoginResponse>(`/auth/impersonate/${userId}`),
 };
 
 // Objects API

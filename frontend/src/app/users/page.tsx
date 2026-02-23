@@ -6,9 +6,17 @@ import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { usersApi } from '@/lib/api';
 import { UserWithAssignments, roleLabels, Role } from '@/lib/types';
-import { Plus, Pencil, Trash2, Users, UserCheck, UserX } from 'lucide-react';
+import { Plus, Pencil, Trash2, UserCheck, UserX, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { UserFormDialog } from '@/components/users/user-form-dialog';
 import {
   AlertDialog,
@@ -22,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function UsersPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, impersonate } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<UserWithAssignments[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,80 +107,110 @@ export default function UsersPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-6xl mx-auto p-4">
+      <main className="max-w-7xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="grid grid-cols-[1fr_180px_120px_100px_100px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <div>Пользователь</div>
-            <div>Роль</div>
-            <div>Объектов</div>
-            <div>Статус</div>
-            <div></div>
-          </div>
-
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : users.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              Пользователи не найдены
-            </div>
-          ) : (
-            users.map((u) => (
-              <div
-                key={u.id}
-                className="grid grid-cols-[1fr_180px_120px_100px_100px] gap-4 px-6 py-4 border-b last:border-b-0 items-center hover:bg-gray-50"
-              >
-                <div>
-                  <div className="font-semibold text-gray-900">{u.name}</div>
-                  <div className="text-sm text-gray-500">{u.email}</div>
-                  {u.phone && <div className="text-sm text-gray-400">{u.phone}</div>}
-                </div>
-                <div>
-                  <Badge variant="outline">{roleLabels[u.role as Role] || u.role}</Badge>
-                </div>
-                <div className="text-gray-600">{u._count?.objectAssignments || 0}</div>
-                <div>
-                  {u.isActive ? (
-                    <Badge className="bg-green-100 text-green-700">Активен</Badge>
-                  ) : (
-                    <Badge className="bg-gray-100 text-gray-500">Неактивен</Badge>
-                  )}
-                </div>
-                <div className="flex gap-1 justify-end">
-                  {canManage && u.id !== user.id && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleActive(u)}
-                        title={u.isActive ? 'Деактивировать' : 'Активировать'}
-                      >
-                        {u.isActive ? (
-                          <UserX className="w-4 h-4 text-orange-500" />
-                        ) : (
-                          <UserCheck className="w-4 h-4 text-green-500" />
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-xs">Пользователь</TableHead>
+                <TableHead className="text-xs w-[180px]">Роль</TableHead>
+                <TableHead className="text-xs w-[120px]">Объектов</TableHead>
+                <TableHead className="text-xs w-[100px]">Статус</TableHead>
+                <TableHead className="text-xs w-[100px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className="animate-pulse">
+                    <TableCell><div className="h-4 w-40 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-8 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-16 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-16 bg-muted rounded ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    Пользователи не найдены
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell>
+                      <div className="text-sm font-medium">{u.name}</div>
+                      <div className="text-xs text-muted-foreground">{u.email}</div>
+                      {u.phone && <div className="text-xs text-muted-foreground">{u.phone}</div>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{roleLabels[u.role as Role] || u.role}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{u._count?.objectAssignments || 0}</TableCell>
+                    <TableCell>
+                      {u.isActive ? (
+                        <Badge className="bg-green-100 text-green-700">Активен</Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-500">Неактивен</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 justify-end">
+                        {user.role === 'SUPERADMIN' && u.id !== user.id && u.isActive && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await impersonate(u.id);
+                                router.push('/objects');
+                              } catch (err) {
+                                console.error('Impersonation failed:', err);
+                              }
+                            }}
+                            title="Войти как этот пользователь"
+                          >
+                            <Eye className="w-4 h-4 text-blue-500" />
+                          </Button>
                         )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => { setEditingUser(u); setIsDialogOpen(true); }}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletingUser(u)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+                        {canManage && u.id !== user.id && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleActive(u)}
+                              title={u.isActive ? 'Деактивировать' : 'Активировать'}
+                            >
+                              {u.isActive ? (
+                                <UserX className="w-4 h-4 text-orange-500" />
+                              ) : (
+                                <UserCheck className="w-4 h-4 text-green-500" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setEditingUser(u); setIsDialogOpen(true); }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeletingUser(u)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </main>
 

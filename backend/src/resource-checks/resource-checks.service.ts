@@ -38,6 +38,7 @@ export class ResourceChecksService {
         stageId: dto.stageId,
         userId,
         date: new Date(dto.date),
+        checkedAt: new Date(),
         actualPeople: dto.actualPeople,
         comment: dto.comment,
         equipmentChecks: dto.equipmentChecks?.length
@@ -100,7 +101,12 @@ export class ResourceChecksService {
           select: { id: true, name: true, email: true },
         },
         stage: {
-          select: { id: true, name: true, objectId: true },
+          select: {
+            id: true,
+            name: true,
+            objectId: true,
+            object: { select: { id: true, name: true } },
+          },
         },
       },
       orderBy: { date: 'desc' },
@@ -123,7 +129,12 @@ export class ResourceChecksService {
           select: { id: true, name: true, email: true },
         },
         stage: {
-          select: { id: true, name: true, objectId: true },
+          select: {
+            id: true,
+            name: true,
+            objectId: true,
+            object: { select: { id: true, name: true } },
+          },
         },
       },
     });
@@ -137,6 +148,11 @@ export class ResourceChecksService {
 
   async update(id: string, userId: string, tenantId: string, dto: UpdateResourceCheckDto) {
     const check = await this.findOne(id, tenantId);
+
+    // Проверяем авторство — только создатель может редактировать
+    if (check.userId !== userId) {
+      throw new ForbiddenException('Можно редактировать только свои проверки');
+    }
 
     // Проверяем, что редактирование только сегодняшней проверки
     const today = new Date();

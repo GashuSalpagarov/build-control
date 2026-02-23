@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { objectsApi, stagesApi, resourceChecksApi, paymentsApi, volumeChecksApi } from '@/lib/api';
-import { ConstructionObject, Stage, ResourceCheck, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
+import { ConstructionObject, Stage, ResourceCheck, VolumeCheck, Payment, PaymentObjectSummary, VolumeCheckObjectSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Calendar, Users, Truck, Pencil, Package, Wallet, Maximize2, Minimize2, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { StageFormDialog } from '@/components/stages/stage-form-dialog';
@@ -17,6 +17,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 type CalendarScale = 'days' | 'weeks' | 'decades' | 'months';
 type CalendarZoom = 50 | 75 | 100 | 125 | 150;
@@ -262,7 +270,11 @@ export default function ObjectDetailPage() {
   const [calendarZoom, setCalendarZoom] = useState<CalendarZoom>(100);
   const zoom = zoomConfig[calendarZoom];
   const [volumeModalStage, setVolumeModalStage] = useState<Stage | null>(null);
+  const [volumeModalChecks, setVolumeModalChecks] = useState<VolumeCheck[]>([]);
+  const [volumeModalLoading, setVolumeModalLoading] = useState(false);
   const [paymentModalStage, setPaymentModalStage] = useState<Stage | null>(null);
+  const [paymentModalChecks, setPaymentModalChecks] = useState<Payment[]>([]);
+  const [paymentModalLoading, setPaymentModalLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [expandedEquipment, setExpandedEquipment] = useState<Set<string>>(new Set());
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -359,6 +371,32 @@ export default function ObjectDetailPage() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
+
+  // Загрузка проверок для модалки объёмов
+  useEffect(() => {
+    if (volumeModalStage) {
+      setVolumeModalLoading(true);
+      volumeChecksApi.getAll({ stageId: volumeModalStage.id })
+        .then(setVolumeModalChecks)
+        .catch(console.error)
+        .finally(() => setVolumeModalLoading(false));
+    } else {
+      setVolumeModalChecks([]);
+    }
+  }, [volumeModalStage]);
+
+  // Загрузка платежей для модалки
+  useEffect(() => {
+    if (paymentModalStage) {
+      setPaymentModalLoading(true);
+      paymentsApi.getAll({ stageId: paymentModalStage.id })
+        .then(setPaymentModalChecks)
+        .catch(console.error)
+        .finally(() => setPaymentModalLoading(false));
+    } else {
+      setPaymentModalChecks([]);
+    }
+  }, [paymentModalStage]);
 
   // Drag-to-scroll handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -486,8 +524,35 @@ export default function ObjectDetailPage() {
           <div className="flex items-center justify-between gap-4 px-4 py-2">
             {/* Статистика */}
             {(() => {
+              // Расчёт прогресса по ресурсным проверкам
+              const stageProgressValues = stages.map((s) => {
+                const stgChecks = resourceChecks.filter(c => c.stageId === s.id);
+                if (stgChecks.length === 0 || !s.startDate || !s.endDate) return 0;
+                const totalDays = Math.max(1, Math.ceil(
+                  (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                ) + 1);
+                const coverageRatio = Math.min(stgChecks.length / totalDays, 1);
+                const pPlanned = s.plannedPeople || 0;
+                const eqPlanned = s.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
+                let avgFulfill = 0;
+                let met = 0;
+                if (pPlanned > 0) {
+                  const avgP = stgChecks.reduce((sum, c) => sum + (c.actualPeople || 0), 0) / stgChecks.length;
+                  avgFulfill += Math.min(avgP / pPlanned, 1);
+                  met++;
+                }
+                if (eqPlanned > 0) {
+                  const avgE = stgChecks.reduce((sum, c) =>
+                    sum + c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0), 0
+                  ) / stgChecks.length;
+                  avgFulfill += Math.min(avgE / eqPlanned, 1);
+                  met++;
+                }
+                const fulfillR = met > 0 ? avgFulfill / met : coverageRatio;
+                return Math.round(coverageRatio * fulfillR * 100);
+              });
               const totalProgress = stages.length > 0
-                ? Math.round(stages.reduce((sum, s) => sum + (s.volumeChecks?.[0]?.percent || 0), 0) / stages.length)
+                ? Math.round(stageProgressValues.reduce((a, b) => a + b, 0) / stages.length)
                 : 0;
               const today = new Date();
               let plannedProgress = 0;
@@ -505,7 +570,7 @@ export default function ObjectDetailPage() {
                 plannedProgress = Math.round(stageProgressList.reduce((a, b) => a + b, 0) / stages.length);
               }
               const deviation = totalProgress - plannedProgress;
-              const completedStages = stages.filter((s) => (s.volumeChecks?.[0]?.percent || 0) >= 100).length;
+              const completedStages = stageProgressValues.filter((p) => p >= 100).length;
               const financialPercent = paymentSummary?.percentPaid || 0;
 
               return (
@@ -663,8 +728,37 @@ export default function ObjectDetailPage() {
                   </tr>
                 ) : (
                   stages.map((stage, stageIndex) => {
-                    const lastVolumeCheck = stage.volumeChecks?.[0];
-                    const progress = lastVolumeCheck?.percent || 0;
+                    // Расчёт прогресса по ресурсным проверкам (люди + техника)
+                    const stageChecks = resourceChecks.filter(c => c.stageId === stage.id);
+                    let progress = 0;
+                    if (stageChecks.length > 0 && stage.startDate && stage.endDate) {
+                      const totalDays = Math.max(1, Math.ceil(
+                        (new Date(stage.endDate).getTime() - new Date(stage.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                      ) + 1);
+                      const daysWithChecks = stageChecks.length;
+                      const coverageRatio = Math.min(daysWithChecks / totalDays, 1);
+
+                      const plannedPeople = stage.plannedPeople || 0;
+                      const plannedEquipment = stage.plannedEquipment?.reduce((sum, eq) => sum + eq.quantity, 0) || 0;
+
+                      // Среднее выполнение по людям и технике
+                      let avgFulfillment = 0;
+                      let metrics = 0;
+                      if (plannedPeople > 0) {
+                        const avgPeople = stageChecks.reduce((sum, c) => sum + (c.actualPeople || 0), 0) / stageChecks.length;
+                        avgFulfillment += Math.min(avgPeople / plannedPeople, 1);
+                        metrics++;
+                      }
+                      if (plannedEquipment > 0) {
+                        const avgEquip = stageChecks.reduce((sum, c) =>
+                          sum + c.equipmentChecks.reduce((eq, e) => eq + e.quantity, 0), 0
+                        ) / stageChecks.length;
+                        avgFulfillment += Math.min(avgEquip / plannedEquipment, 1);
+                        metrics++;
+                      }
+                      const fulfillmentRatio = metrics > 0 ? avgFulfillment / metrics : coverageRatio;
+                      progress = Math.round(coverageRatio * fulfillmentRatio * 100);
+                    }
                     const stageBudget = (stage as any).budget;
 
                     // Вычисляем индексы начала и конца периода этапа
@@ -747,7 +841,7 @@ export default function ObjectDetailPage() {
                                   onClick={() => handleEditStage(stage)}
                                   title="Редактировать"
                                 >
-                                  <Pencil className="w-3 h-3" />
+                                  <Pencil className={zoom.iconSize} />
                                 </Button>
                               )}
                             </div>
@@ -1025,35 +1119,90 @@ export default function ObjectDetailPage() {
 
       {/* Модальное окно проверок объёмов */}
       <Dialog open={!!volumeModalStage} onOpenChange={() => setVolumeModalStage(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[750px] max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Проверки объёмов</DialogTitle>
+            <DialogTitle className="text-base">Проверки объёмов</DialogTitle>
           </DialogHeader>
           {volumeModalStage && (() => {
             const volStage = volumeSummary?.stages.find(s => s.stageId === volumeModalStage.id);
+            const percent = volStage?.percent || 0;
             return (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-500">{volumeModalStage.name}</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500">Выполнено</div>
-                    <div className="text-2xl font-bold text-primary">{volStage?.percent || 0}%</div>
+              <div className="space-y-3 flex-1 min-h-0 flex flex-col">
+                <div className="text-sm text-muted-foreground">{volumeModalStage.name}</div>
+                <div className="flex items-center gap-6">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Выполнено</div>
+                    <div className={`text-lg font-bold ${
+                      percent >= 100 ? 'text-green-600' : percent >= 50 ? 'text-yellow-600' : 'text-foreground'
+                    }`}>{percent}%</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500">Проверок</div>
-                    <div className="text-2xl font-bold text-gray-700">{volStage?.checksCount || 0}</div>
+                  <div className="h-8 w-px bg-border" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Проверок</div>
+                    <div className="text-lg font-bold text-foreground">{volStage?.checksCount || 0}</div>
                   </div>
+                  {volStage?.lastCheckDate && (
+                    <>
+                      <div className="h-8 w-px bg-border" />
+                      <div>
+                        <div className="text-xs text-muted-foreground">Последняя</div>
+                        <div className="text-sm font-medium text-foreground">{new Date(volStage.lastCheckDate).toLocaleDateString('ru-RU')}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
-                {volStage?.lastCheckDate && (
-                  <div className="text-sm text-gray-500">
-                    Последняя проверка: {new Date(volStage.lastCheckDate).toLocaleDateString('ru-RU')}
-                  </div>
-                )}
-                {(!volStage || volStage.checksCount === 0) && (
-                  <div className="text-center text-gray-400 py-4">
-                    Проверки объёмов ещё не проводились
-                  </div>
-                )}
+                <div className="flex-1 min-h-0 overflow-auto rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="text-xs w-[50px]">№</TableHead>
+                        <TableHead className="text-xs">Дата</TableHead>
+                        <TableHead className="text-xs">Процент</TableHead>
+                        <TableHead className="text-xs">Автор</TableHead>
+                        <TableHead className="text-xs">Комментарий</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {volumeModalLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                          <TableRow key={i} className="animate-pulse">
+                            <TableCell><div className="h-4 w-5 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-16 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-12 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : volumeModalChecks.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-16 text-center text-sm text-muted-foreground">
+                            Проверки объёмов ещё не проводились
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        volumeModalChecks.map((check, idx) => {
+                          const d = new Date(check.date);
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yy = String(d.getFullYear()).slice(-2);
+                          return (
+                            <TableRow key={check.id}>
+                              <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{dd}.{mm}.{yy}</TableCell>
+                              <TableCell>
+                                <span className={`text-sm font-medium ${
+                                  check.percent >= 100 ? 'text-green-600' : check.percent >= 50 ? 'text-yellow-600' : 'text-foreground'
+                                }`}>{check.percent}%</span>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{check.user?.name || '—'}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{check.comment || '—'}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             );
           })()}
@@ -1062,42 +1211,89 @@ export default function ObjectDetailPage() {
 
       {/* Модальное окно платежей */}
       <Dialog open={!!paymentModalStage} onOpenChange={() => setPaymentModalStage(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[750px] max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Платежи по этапу</DialogTitle>
+            <DialogTitle className="text-base">Платежи по этапу</DialogTitle>
           </DialogHeader>
           {paymentModalStage && (() => {
             const payStage = paymentSummary?.stages.find(s => s.stageId === paymentModalStage.id);
             const stageBudget = (paymentModalStage as any).budget || 0;
+            const percentPaid = payStage?.percentPaid || 0;
             return (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-500">{paymentModalStage.name}</div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500">Бюджет</div>
-                    <div className="text-lg font-bold text-gray-700">
+              <div className="space-y-3 flex-1 min-h-0 flex flex-col">
+                <div className="text-sm text-muted-foreground">{paymentModalStage.name}</div>
+                <div className="flex items-center gap-6">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Бюджет</div>
+                    <div className="text-sm font-bold text-foreground">
                       {stageBudget ? Number(stageBudget).toLocaleString('ru-RU') : '—'} ₽
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500">Оплачено</div>
-                    <div className="text-lg font-bold text-green-600">
+                  <div className="h-8 w-px bg-border" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Оплачено</div>
+                    <div className="text-sm font-bold text-green-600">
                       {payStage?.totalPaid ? Number(payStage.totalPaid).toLocaleString('ru-RU') : '0'} ₽
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500">Процент</div>
-                    <div className="text-lg font-bold text-primary">{payStage?.percentPaid || 0}%</div>
+                  <div className="h-8 w-px bg-border" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Освоено</div>
+                    <div className={`text-sm font-bold ${
+                      percentPaid >= 100 ? 'text-green-600' : percentPaid >= 50 ? 'text-yellow-600' : 'text-foreground'
+                    }`}>{percentPaid}%</div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
-                  Платежей: {payStage?.paymentsCount || 0}
+                <div className="flex-1 min-h-0 overflow-auto rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="text-xs w-[50px]">№</TableHead>
+                        <TableHead className="text-xs">Дата</TableHead>
+                        <TableHead className="text-xs text-right">Сумма</TableHead>
+                        <TableHead className="text-xs">Автор</TableHead>
+                        <TableHead className="text-xs">Комментарий</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paymentModalLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                          <TableRow key={i} className="animate-pulse">
+                            <TableCell><div className="h-4 w-5 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-16 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                            <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                            <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : paymentModalChecks.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-16 text-center text-sm text-muted-foreground">
+                            Платежи по этапу ещё не проводились
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paymentModalChecks.map((payment, idx) => {
+                          const d = new Date(payment.date);
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yy = String(d.getFullYear()).slice(-2);
+                          return (
+                            <TableRow key={payment.id}>
+                              <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{dd}.{mm}.{yy}</TableCell>
+                              <TableCell className="text-right text-sm font-medium text-green-600 whitespace-nowrap">
+                                {Number(payment.amount).toLocaleString('ru-RU')} ₽
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{payment.user?.name || '—'}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{payment.comment || '—'}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-                {(!payStage || payStage.paymentsCount === 0) && (
-                  <div className="text-center text-gray-400 py-4">
-                    Платежи по этапу ещё не проводились
-                  </div>
-                )}
               </div>
             );
           })()}

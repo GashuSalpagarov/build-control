@@ -61,6 +61,34 @@ export class AuthService {
     };
   }
 
+  async impersonate(targetUserId: string) {
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+
+    if (!targetUser || !targetUser.isActive) {
+      throw new UnauthorizedException('Пользователь не найден или деактивирован');
+    }
+
+    const payload: JwtPayload = {
+      sub: targetUser.id,
+      email: targetUser.email,
+      role: targetUser.role,
+      tenantId: targetUser.tenantId,
+    };
+
+    return {
+      accessToken: this.jwtService.sign(payload),
+      user: {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        role: targetUser.role,
+        tenantId: targetUser.tenantId,
+      },
+    };
+  }
+
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
   }

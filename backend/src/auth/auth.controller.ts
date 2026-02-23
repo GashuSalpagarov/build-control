@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, UseGuards, ForbiddenException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -17,5 +17,17 @@ export class AuthController {
   @Get('me')
   async getMe(@CurrentUser() user: any) {
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('impersonate/:userId')
+  async impersonate(
+    @CurrentUser() user: any,
+    @Param('userId') targetUserId: string,
+  ) {
+    if (user.role !== 'SUPERADMIN') {
+      throw new ForbiddenException('Только суперадмин может выполнять имперсонацию');
+    }
+    return this.authService.impersonate(targetUserId);
   }
 }

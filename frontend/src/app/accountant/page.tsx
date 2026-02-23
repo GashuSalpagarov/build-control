@@ -24,7 +24,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { objectsApi, stagesApi, paymentsApi } from '@/lib/api';
 import { ConstructionObject, Stage, Payment, PaymentObjectSummary } from '@/lib/types';
-import { Plus, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { Plus, AlertTriangle } from 'lucide-react';
 
 function formatCurrency(amount: number | undefined | null): string {
   if (!amount && amount !== 0) return '—';
@@ -36,11 +44,11 @@ function formatCurrency(amount: number | undefined | null): string {
 }
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const d = new Date(dateString);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
 }
 
 export default function AccountantPage() {
@@ -52,7 +60,7 @@ export default function AccountantPage() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<PaymentObjectSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Форма платежа
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -191,146 +199,186 @@ export default function AccountantPage() {
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto p-4">
         {/* Выбор объекта */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="w-full max-w-md">
-            <Label>Выберите объект</Label>
-            <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите объект" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Не выбран</SelectItem>
-                {objects.map((obj) => (
-                  <SelectItem key={obj.id} value={obj.id}>
-                    {obj.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="mb-6 w-full max-w-md">
+          <Label className="mb-1.5 block">Выберите объект</Label>
+          <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите объект" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Не выбран</SelectItem>
+              {objects.map((obj) => (
+                <SelectItem key={obj.id} value={obj.id}>
+                  {obj.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {selectedObjectId !== '__none__' && (
-          <>
-            {/* Сводка */}
-            {summary && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Общий бюджет</div>
-                  <div className="text-2xl font-bold text-gray-700">
-                    {formatCurrency(summary.totalBudget)}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Оплачено</div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(summary.totalPaid)}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Остаток</div>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(summary.totalRemaining)}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Освоено</div>
-                  <div className="text-2xl font-bold text-indigo-600">
-                    {summary.percentPaid}%
-                  </div>
+        {/* Сводка */}
+        {(() => {
+          const totalBudget = summary?.totalBudget || 0;
+          const totalPaid = summary?.totalPaid || 0;
+          const totalRemaining = summary?.totalRemaining || 0;
+          const percentPaid = summary?.percentPaid || 0;
+          return (
+            <div className="flex items-center gap-6 mb-6 text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Бюджет</span>
+                <span className="font-semibold text-foreground">{formatCurrency(totalBudget)}</span>
+              </div>
+              <span className="text-muted-foreground/30">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Оплачено</span>
+                <span className="font-semibold text-green-600">{formatCurrency(totalPaid)}</span>
+              </div>
+              <span className="text-muted-foreground/30">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Остаток</span>
+                <span className="font-semibold text-foreground">{formatCurrency(totalRemaining)}</span>
+              </div>
+              <span className="text-muted-foreground/30">|</span>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Освоено</span>
+                <span className={`font-semibold ${
+                  percentPaid >= 80 ? 'text-green-600' :
+                  percentPaid >= 40 ? 'text-yellow-600' : 'text-foreground'
+                }`}>{percentPaid}%</span>
+                <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      percentPaid >= 80 ? 'bg-green-500' :
+                      percentPaid >= 40 ? 'bg-yellow-500' : 'bg-primary'
+                    }`}
+                    style={{ width: `${Math.min(percentPaid, 100)}%` }}
+                  />
                 </div>
               </div>
-            )}
+            </div>
+          );
+        })()}
 
-            {/* Этапы со сводкой */}
-            {summary && summary.stages.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700">
-                  Этапы
-                </div>
-                <div className="divide-y">
-                  {summary.stages.map((stage) => (
-                    <div key={stage.stageId} className="px-4 py-3 flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{stage.stageName}</div>
-                        <div className="text-sm text-gray-500">
-                          {stage.paymentsCount} платеж(ей)
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm">
-                          <span className="text-green-600 font-medium">
-                            {formatCurrency(stage.paid)}
-                          </span>
-                          {' / '}
-                          <span className="text-gray-500">
-                            {formatCurrency(stage.budget)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Остаток: {formatCurrency(stage.remaining)}
-                        </div>
+        {/* Этапы со сводкой */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-sm text-foreground mb-2">Этапы</h3>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-xs">Этап</TableHead>
+                  <TableHead className="text-xs text-right">Оплачено</TableHead>
+                  <TableHead className="text-xs text-right">Бюджет</TableHead>
+                  <TableHead className="text-xs text-right">Остаток</TableHead>
+                  <TableHead className="text-xs text-center">Платежей</TableHead>
+                  <TableHead className="text-xs text-center">%</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary && summary.stages.length > 0 ? (
+                  summary.stages.map((stage) => (
+                    <TableRow key={stage.stageId}>
+                      <TableCell>
+                        <div className="text-sm font-medium text-foreground">{stage.stageName}</div>
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-green-600 font-medium">
+                        {formatCurrency(stage.paid)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {formatCurrency(stage.budget)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {formatCurrency(stage.remaining)}
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-muted-foreground">
+                        {stage.paymentsCount}
+                      </TableCell>
+                      <TableCell className="text-center">
                         <Badge
-                          className={`mt-1 ${
+                          className={`text-xs min-w-[42px] justify-center ${
                             stage.percentPaid >= 100
                               ? 'bg-green-100 text-green-700'
                               : stage.percentPaid >= 50
                               ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-gray-100 text-gray-700'
+                              : 'bg-muted text-foreground'
                           }`}
                         >
                           {stage.percentPaid}%
                         </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      {selectedObjectId === '__none__' ? 'Выберите объект' : 'Этапов нет'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
-            {/* Список платежей */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700">
-                История платежей
-              </div>
+        {/* Список платежей */}
+        <h3 className="font-semibold text-sm text-foreground mb-2">История платежей</h3>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[50px] text-xs">№</TableHead>
+                <TableHead className="text-xs">Этап</TableHead>
+                <TableHead className="text-xs">Дата</TableHead>
+                <TableHead className="text-xs">Автор</TableHead>
+                <TableHead className="text-xs">Комментарий</TableHead>
+                <TableHead className="text-xs text-right">Сумма</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoading ? (
-                <div className="p-8 text-center text-gray-500">Загрузка...</div>
-              ) : payments.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">Платежей нет</div>
-              ) : (
-                <div className="divide-y">
-                  {payments.map((payment) => (
-                    <div key={payment.id} className="px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{payment.stage.name}</div>
-                          <div className="flex items-center gap-3 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {formatDate(payment.date)}
-                            </span>
-                            <span>{payment.user.name}</span>
-                          </div>
-                          {payment.comment && (
-                            <div className="text-sm text-gray-500 mt-1">
-                              {payment.comment}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-green-600 flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            {formatCurrency(payment.amount)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell><div className="h-4 w-5 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-16 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-40 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                    </TableRow>
                   ))}
-                </div>
+                </>
+              ) : payments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    {selectedObjectId === '__none__' ? 'Выберите объект' : 'Платежей нет'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                payments.map((payment, index) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium text-foreground">{payment.stage.name}</div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(payment.date)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{payment.user.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                      {payment.comment || '—'}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-green-600 whitespace-nowrap">
+                      {formatCurrency(payment.amount)}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-            </div>
-          </>
-        )}
+            </TableBody>
+          </Table>
+        </div>
       </main>
 
       {/* Форма добавления платежа */}

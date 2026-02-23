@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVolumeCheckDto } from './dto/create-volume-check.dto';
 
@@ -15,6 +15,18 @@ export class VolumeChecksService {
 
     if (!stage || stage.object.tenantId !== tenantId) {
       throw new NotFoundException('Этап не найден');
+    }
+
+    // Проверяем, что новый процент не меньше предыдущего
+    const latestCheck = await this.prisma.volumeCheck.findFirst({
+      where: { stageId: dto.stageId },
+      orderBy: { date: 'desc' },
+    });
+
+    if (latestCheck && dto.percent < latestCheck.percent) {
+      throw new BadRequestException(
+        `Процент не может быть меньше предыдущего значения (${latestCheck.percent}%)`
+      );
     }
 
     // Создаём проверку объёма

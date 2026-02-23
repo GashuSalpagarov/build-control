@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
@@ -35,16 +34,24 @@ import {
   appealTypeLabels,
   appealTypeColors,
 } from '@/lib/types';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const d = new Date(dateString);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}.${mm}.${yy} ${hh}:${min}`;
 }
 
 export default function AppealsPage() {
@@ -196,10 +203,12 @@ export default function AppealsPage() {
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto p-4">
         {/* Фильтры */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Статус</Label>
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Статус
+              </label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Все статусы" />
@@ -213,8 +222,10 @@ export default function AppealsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Объект</Label>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Объект
+              </label>
               <Select value={filterObjectId} onValueChange={setFilterObjectId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Все объекты" />
@@ -234,49 +245,81 @@ export default function AppealsPage() {
 
         {/* Список обращений */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : appeals.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">Обращений нет</div>
-          ) : (
-            <div className="divide-y">
-              {appeals.map((appeal) => (
-                <Link
-                  key={appeal.id}
-                  href={`/appeals/${appeal.id}`}
-                  className="block px-4 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge className={appealTypeColors[appeal.type]}>
-                          {appealTypeLabels[appeal.type]}
-                        </Badge>
-                        <Badge className={appealStatusColors[appeal.status]}>
-                          {getStatusIcon(appeal.status)}
-                          <span className="ml-1">{appealStatusLabels[appeal.status]}</span>
-                        </Badge>
-                      </div>
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {appeal.subject}
-                      </h3>
-                      <div className="text-sm text-gray-500 mt-1">
-                        <span>{appeal.object.name}</span>
-                        {appeal.stage && <span> • {appeal.stage.name}</span>}
-                      </div>
-                      <div className="text-sm text-gray-400 mt-1">
-                        {appeal.user.name} • {formatDate(appeal.createdAt)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <MessageSquare className="w-4 h-4" />
-                      <span className="text-sm">{appeal._count?.messages || 0}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[50px] text-xs">№</TableHead>
+                <TableHead className="text-xs">Тема</TableHead>
+                <TableHead className="text-xs">Тип</TableHead>
+                <TableHead className="text-xs">Статус</TableHead>
+                <TableHead className="text-xs">Объект</TableHead>
+                <TableHead className="text-xs">Автор</TableHead>
+                <TableHead className="text-xs">Дата</TableHead>
+                <TableHead className="text-xs text-center">
+                  <MessageSquare className="w-4 h-4 inline" />
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className="animate-pulse">
+                    <TableCell><div className="h-4 w-6 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-40 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-20 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-20 bg-muted rounded" /></TableCell>
+                    <TableCell><div className="h-4 w-6 bg-muted rounded" /></TableCell>
+                  </TableRow>
+                ))
+              ) : appeals.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                    Обращений нет
+                  </TableCell>
+                </TableRow>
+              ) : (
+                appeals.map((appeal, index) => (
+                  <TableRow
+                    key={appeal.id}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/appeals/${appeal.id}`)}
+                  >
+                    <TableCell className="text-sm text-muted-foreground">{index + 1}</TableCell>
+                    <TableCell className="text-sm font-medium truncate">
+                      {appeal.subject}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={appealTypeColors[appeal.type]}>
+                        {appealTypeLabels[appeal.type]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={appealStatusColors[appeal.status]}>
+                        {getStatusIcon(appeal.status)}
+                        <span className="ml-1">{appealStatusLabels[appeal.status]}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div>{appeal.object.name}</div>
+                      {appeal.stage && (
+                        <div className="text-xs text-muted-foreground">{appeal.stage.name}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{appeal.user.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      {formatDate(appeal.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-muted-foreground">
+                      {appeal._count?.messages || 0}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </main>
 
@@ -313,15 +356,15 @@ export default function AppealsPage() {
               <div className="space-y-2">
                 <Label>Этап (опционально)</Label>
                 <Select
-                  value={formData.stageId}
-                  onValueChange={(value) => setFormData({ ...formData, stageId: value })}
+                  value={formData.stageId || '__none__'}
+                  onValueChange={(value) => setFormData({ ...formData, stageId: value === '__none__' ? '' : value })}
                   disabled={!formData.objectId}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите этап" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Без этапа</SelectItem>
+                    <SelectItem value="__none__">Без этапа</SelectItem>
                     {stages.map((stage) => (
                       <SelectItem key={stage.id} value={stage.id}>
                         {stage.name}

@@ -71,6 +71,7 @@ export interface VolumeCheck {
   date: string;
   percent: number;
   comment?: string;
+  user?: { id: string; name: string };
 }
 
 export interface EquipmentCheck {
@@ -86,6 +87,7 @@ export interface ResourceCheck {
   stageId: string;
   userId: string;
   date: string;
+  checkedAt: string;
   actualPeople: number | null;
   comment?: string;
   createdAt: string;
@@ -99,6 +101,7 @@ export interface ResourceCheck {
     id: string;
     name: string;
     objectId?: string;
+    object?: { id: string; name: string };
   };
 }
 

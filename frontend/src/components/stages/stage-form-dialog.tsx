@@ -31,7 +31,18 @@ const stageSchema = z.object({
   endDate: z.string().optional(),
   budget: z.string().optional(),
   plannedPeople: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return data.endDate > data.startDate;
+    }
+    return true;
+  },
+  {
+    message: 'Дата окончания должна быть позже даты начала',
+    path: ['endDate'],
+  }
+);
 
 type StageFormData = z.infer<typeof stageSchema>;
 
@@ -232,270 +243,276 @@ export function StageFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {isEditing ? 'Редактировать этап' : 'Добавить этап'}
           </DialogTitle>
         </DialogHeader>
 
-        <form id="stage-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto flex-1 pr-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">Название этапа *</Label>
-            <Input
-              id="name"
-              {...register('name')}
-              placeholder="Например: Подготовительные работы"
-            />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
-            )}
-          </div>
+        <form id="stage-form" onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 pr-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Левая колонка: основные данные */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Название этапа *</Label>
+                <Input
+                  id="name"
+                  {...register('name')}
+                  placeholder="Например: Подготовительные работы"
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                )}
+              </div>
 
-          <div className="space-y-4">
-            <div className="flex items-end gap-2">
-              <div className="grid grid-cols-2 gap-4 flex-1">
-                <div className="space-y-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
                   <Label htmlFor="startDate">
                     Дата начала {extensionMode && <span className="text-gray-500">(исх.)</span>}
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="startDate"
-                      type="date"
-                      {...register('startDate')}
-                      min={objectStartDate?.split('T')[0]}
-                      max={objectEndDate?.split('T')[0]}
-                      disabled={extensionMode}
-                      className={extensionMode ? 'bg-gray-100 pr-8' : ''}
-                    />
-                    {extensionMode && (
-                      <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
+                  {isEditing && stage?.endDate && (
+                    <Button
+                      type="button"
+                      variant={extensionMode ? 'outline' : 'secondary'}
+                      size="sm"
+                      onClick={() => {
+                        setExtensionMode(!extensionMode);
+                        if (!extensionMode) {
+                          setExtendToDate('');
+                          setExtensionReason('');
+                        }
+                      }}
+                      className="whitespace-nowrap h-7 text-xs"
+                    >
+                      <Clock className="w-3 h-3 mr-1" />
+                      {extensionMode ? 'Отменить' : 'Продлить'}
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">
-                    Дата окончания {extensionMode && <span className="text-gray-500">(исх.)</span>}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="endDate"
-                      type="date"
-                      {...register('endDate')}
-                      min={objectStartDate?.split('T')[0]}
-                      max={objectEndDate?.split('T')[0]}
-                      disabled={extensionMode}
-                      className={extensionMode ? 'bg-gray-100 pr-8' : ''}
-                    />
-                    {extensionMode && (
-                      <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-              </div>
-              {isEditing && stage?.endDate && (
-                <Button
-                  type="button"
-                  variant={extensionMode ? 'outline' : 'secondary'}
-                  size="sm"
-                  onClick={() => {
-                    setExtensionMode(!extensionMode);
-                    if (!extensionMode) {
-                      setExtendToDate('');
-                      setExtensionReason('');
-                    }
-                  }}
-                  className="whitespace-nowrap mb-0.5"
-                >
-                  <Clock className="w-4 h-4 mr-1" />
-                  {extensionMode ? 'Отменить' : 'Продлить'}
-                </Button>
-              )}
-            </div>
-
-            {/* Extension fields */}
-            {extensionMode && (
-              <div className="border-l-4 border-orange-400 pl-4 space-y-3 bg-orange-50/50 p-3 rounded-r-lg">
-                <div className="text-sm font-medium text-orange-700">Продление срока</div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-xs text-gray-500">От (текущий срок)</Label>
-                    <div className="px-3 py-2 bg-gray-100 rounded text-sm font-medium text-gray-700">
-                      {stage?.endDate ? new Date(stage.endDate).toLocaleDateString('ru-RU') : '—'}
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-orange-400 mt-5" />
-                  <div className="flex-1 space-y-1">
-                    <Label htmlFor="extendToDate" className="text-xs text-gray-500">До *</Label>
-                    <Input
-                      id="extendToDate"
-                      type="date"
-                      value={extendToDate}
-                      onChange={(e) => setExtendToDate(e.target.value)}
-                      min={(() => {
-                        if (!stage?.endDate) return undefined;
-                        const nextDay = new Date(stage.endDate);
-                        nextDay.setDate(nextDay.getDate() + 1);
-                        return nextDay.toISOString().split('T')[0];
-                      })()}
-                      max={objectEndDate?.split('T')[0]}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="extensionReason" className="text-xs text-gray-500">Причина *</Label>
-                  <Textarea
-                    id="extensionReason"
-                    value={extensionReason}
-                    onChange={(e) => setExtensionReason(e.target.value)}
-                    placeholder="Укажите причину продления (минимум 10 символов)"
-                    rows={2}
-                    className="text-sm"
+                <div className="relative">
+                  <Input
+                    id="startDate"
+                    type="date"
+                    {...register('startDate')}
+                    min={objectStartDate?.split('T')[0]}
+                    max={objectEndDate?.split('T')[0]}
+                    disabled={extensionMode}
+                    className={extensionMode ? 'bg-gray-100 pr-8' : ''}
                   />
-                  {extensionReason.length > 0 && extensionReason.length < 10 && (
-                    <p className="text-xs text-red-500">
-                      Ещё {10 - extensionReason.length} символов
-                    </p>
+                  {extensionMode && (
+                    <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   )}
                 </div>
               </div>
-            )}
 
-            {/* Schedule change history */}
-            {isEditing && stage?.scheduleChanges && stage.scheduleChanges.length > 0 && (
-              <div className="border rounded-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b">
-                  <History className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
-                    История продлений ({stage.scheduleChanges.length})
-                  </span>
-                </div>
-                <div className="max-h-[150px] overflow-y-auto">
-                  {stage.scheduleChanges
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((change, index) => {
-                      const formatDateStr = (d: string | null) =>
-                        d ? new Date(d).toLocaleDateString('ru-RU') : '—';
-                      const formatDateTime = (d: string) =>
-                        new Date(d).toLocaleDateString('ru-RU', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: '2-digit',
-                        });
-
-                      // Calculate days added
-                      let daysAdded = 0;
-                      if (change.oldEndDate && change.newEndDate) {
-                        daysAdded = Math.ceil(
-                          (new Date(change.newEndDate).getTime() - new Date(change.oldEndDate).getTime()) / (1000 * 60 * 60 * 24)
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={change.id}
-                          className={`px-3 py-2 text-xs ${index > 0 ? 'border-t' : ''} hover:bg-gray-50`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">{formatDateTime(change.createdAt)}</span>
-                              <span className="text-gray-400">•</span>
-                              <span className="font-medium text-gray-700">{change.user?.name || 'Система'}</span>
-                            </div>
-                            {daysAdded > 0 && (
-                              <span className="text-orange-600 font-medium">+{daysAdded} дн.</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-600">
-                            <span>{formatDateStr(change.oldEndDate)}</span>
-                            <ArrowRight className="w-3 h-3 text-gray-400" />
-                            <span className="font-medium text-green-600">{formatDateStr(change.newEndDate)}</span>
-                          </div>
-                          <div className="mt-1 text-gray-500 truncate" title={change.reason}>
-                            {change.reason}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget">Бюджет (руб.)</Label>
-              <Input
-                id="budget"
-                type="number"
-                {...register('budget')}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plannedPeople">План. кол-во людей</Label>
-              <Input
-                id="plannedPeople"
-                type="number"
-                {...register('plannedPeople')}
-                placeholder="0"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Плановая техника</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addEquipment}>
-                <Plus className="w-4 h-4 mr-1" />
-                Добавить
-              </Button>
-            </div>
-            {equipment.length === 0 ? (
-              <p className="text-sm text-gray-500">Техника не добавлена</p>
-            ) : (
               <div className="space-y-2">
-                {equipment.map((entry, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <Select
-                      value={entry.equipmentTypeId}
-                      onValueChange={(value) => updateEquipment(index, 'equipmentTypeId', value)}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Выберите тип техники" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {equipmentTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={entry.quantity}
-                      onChange={(e) => updateEquipment(index, 'quantity', e.target.value)}
-                      className="w-20"
-                      placeholder="Кол-во"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeEquipment(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
+                <Label htmlFor="endDate">
+                  Дата окончания {extensionMode && <span className="text-gray-500">(исх.)</span>}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="endDate"
+                    type="date"
+                    {...register('endDate')}
+                    min={objectStartDate?.split('T')[0]}
+                    max={objectEndDate?.split('T')[0]}
+                    disabled={extensionMode}
+                    className={extensionMode ? 'bg-gray-100 pr-8' : ''}
+                  />
+                  {extensionMode && (
+                    <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  )}
+                </div>
+                {errors.endDate && (
+                  <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                )}
               </div>
-            )}
-          </div>
 
+              {/* Extension fields */}
+              {extensionMode && (
+                <div className="border-l-4 border-orange-400 pl-3 space-y-2 bg-orange-50/50 p-2 rounded-r-lg">
+                  <div className="text-sm font-medium text-orange-700">Продление срока</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs text-gray-500">От</Label>
+                      <div className="px-2 py-1.5 bg-gray-100 rounded text-sm font-medium text-gray-700">
+                        {stage?.endDate ? new Date(stage.endDate).toLocaleDateString('ru-RU') : '—'}
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-orange-400 mt-4" />
+                    <div className="flex-1 space-y-1">
+                      <Label htmlFor="extendToDate" className="text-xs text-gray-500">До *</Label>
+                      <Input
+                        id="extendToDate"
+                        type="date"
+                        value={extendToDate}
+                        onChange={(e) => setExtendToDate(e.target.value)}
+                        min={(() => {
+                          if (!stage?.endDate) return undefined;
+                          const nextDay = new Date(stage.endDate);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          return nextDay.toISOString().split('T')[0];
+                        })()}
+                        max={objectEndDate?.split('T')[0]}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="extensionReason" className="text-xs text-gray-500">Причина *</Label>
+                    <Textarea
+                      id="extensionReason"
+                      value={extensionReason}
+                      onChange={(e) => setExtensionReason(e.target.value)}
+                      placeholder="Укажите причину продления (минимум 10 символов)"
+                      rows={2}
+                      className="text-sm"
+                    />
+                    {extensionReason.length > 0 && extensionReason.length < 10 && (
+                      <p className="text-xs text-red-500">
+                        Ещё {10 - extensionReason.length} символов
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budget">Бюджет (руб.)</Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    {...register('budget')}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="plannedPeople">План. людей</Label>
+                  <Input
+                    id="plannedPeople"
+                    type="number"
+                    {...register('plannedPeople')}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Правая колонка: техника и история */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Плановая техника</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addEquipment}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Добавить
+                  </Button>
+                </div>
+                {equipment.length === 0 ? (
+                  <p className="text-sm text-gray-500">Техника не добавлена</p>
+                ) : (
+                  <div className="space-y-2">
+                    {equipment.map((entry, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Select
+                          value={entry.equipmentTypeId}
+                          onValueChange={(value) => updateEquipment(index, 'equipmentTypeId', value)}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Тип техники" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {equipmentTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={entry.quantity}
+                          onChange={(e) => updateEquipment(index, 'quantity', e.target.value)}
+                          className="w-16"
+                          placeholder="Кол."
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeEquipment(index)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Schedule change history */}
+              {isEditing && stage?.scheduleChanges && stage.scheduleChanges.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b">
+                    <History className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">
+                      История продлений ({stage.scheduleChanges.length})
+                    </span>
+                  </div>
+                  <div className="max-h-[200px] overflow-y-auto">
+                    {stage.scheduleChanges
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((change, index) => {
+                        const formatDateStr = (d: string | null) =>
+                          d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+                        const formatDateTime = (d: string) =>
+                          new Date(d).toLocaleDateString('ru-RU', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit',
+                          });
+
+                        let daysAdded = 0;
+                        if (change.oldEndDate && change.newEndDate) {
+                          daysAdded = Math.ceil(
+                            (new Date(change.newEndDate).getTime() - new Date(change.oldEndDate).getTime()) / (1000 * 60 * 60 * 24)
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={change.id}
+                            className={`px-3 py-2 text-xs ${index > 0 ? 'border-t' : ''} hover:bg-gray-50`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500">{formatDateTime(change.createdAt)}</span>
+                                <span className="text-gray-400">•</span>
+                                <span className="font-medium text-gray-700">{change.user?.name || 'Система'}</span>
+                              </div>
+                              {daysAdded > 0 && (
+                                <span className="text-orange-600 font-medium">+{daysAdded} дн.</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <span>{formatDateStr(change.oldEndDate)}</span>
+                              <ArrowRight className="w-3 h-3 text-gray-400" />
+                              <span className="font-medium text-green-600">{formatDateStr(change.newEndDate)}</span>
+                            </div>
+                            <div className="mt-1 text-gray-500 truncate" title={change.reason}>
+                              {change.reason}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </form>
 
         {error && (

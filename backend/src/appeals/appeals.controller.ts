@@ -23,7 +23,7 @@ export class AppealsController {
   constructor(private readonly appealsService: AppealsService) {}
 
   @Post()
-  @Roles('CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN')
+  @Roles('CONTRACTOR', 'INSPECTOR', 'ACCOUNTANT')
   create(@Body() dto: CreateAppealDto, @Request() req) {
     return this.appealsService.create(dto, req.user.id, req.user.tenantId);
   }

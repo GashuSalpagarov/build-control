@@ -6,9 +6,17 @@ import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { equipmentTypesApi } from '@/lib/api';
 import { EquipmentType } from '@/lib/types';
-import { Plus, Pencil, Trash2, Truck, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -126,78 +134,94 @@ export default function EquipmentTypesPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-3xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {isAdding && (
-            <div className="flex items-center gap-2 px-6 py-4 border-b bg-blue-50">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Название типа техники"
-                className="flex-1"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              />
-              <Button size="sm" onClick={handleAdd}>
-                <Check className="w-4 h-4" />
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => { setIsAdding(false); setNewName(''); }}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+      <main className="max-w-7xl mx-auto p-4">
+        {isAdding && (
+          <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-blue-50">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Название типа техники"
+              className="flex-1"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <Button size="sm" onClick={handleAdd}>
+              <Check className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setIsAdding(false); setNewName(''); }}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
 
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : equipmentTypes.length === 0 && !isAdding ? (
-            <div className="p-8 text-center text-gray-500">
-              <Truck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              Типы техники не найдены
-            </div>
-          ) : (
-            equipmentTypes.map((type) => (
-              <div
-                key={type.id}
-                className="flex items-center gap-4 px-6 py-4 border-b last:border-b-0 hover:bg-gray-50"
-              >
-                {editingId === type.id ? (
-                  <>
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="flex-1"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleUpdate(type.id);
-                        if (e.key === 'Escape') cancelEditing();
-                      }}
-                    />
-                    <Button size="sm" onClick={() => handleUpdate(type.id)}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Truck className="w-5 h-5 text-gray-400" />
-                    <span className="flex-1 font-medium text-gray-900">{type.name}</span>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-xs">Название</TableHead>
+                {canManage && <TableHead className="text-xs w-[100px]"></TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} className="animate-pulse">
+                    <TableCell><div className="h-4 w-48 bg-muted rounded" /></TableCell>
+                    {canManage && <TableCell><div className="h-4 w-16 bg-muted rounded ml-auto" /></TableCell>}
+                  </TableRow>
+                ))
+              ) : equipmentTypes.length === 0 && !isAdding ? (
+                <TableRow>
+                  <TableCell colSpan={canManage ? 2 : 1} className="h-24 text-center text-muted-foreground">
+                    Типы техники не найдены
+                  </TableCell>
+                </TableRow>
+              ) : (
+                equipmentTypes.map((type) => (
+                  <TableRow key={type.id}>
+                    <TableCell>
+                      {editingId === type.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            className="flex-1"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdate(type.id);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                          />
+                          <Button size="sm" onClick={() => handleUpdate(type.id)}>
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium">{type.name}</span>
+                      )}
+                    </TableCell>
                     {canManage && (
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => startEditing(type)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeletingType(type)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
+                      <TableCell>
+                        {editingId !== type.id && (
+                          <div className="flex gap-1 justify-end">
+                            <Button variant="ghost" size="sm" onClick={() => startEditing(type)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setDeletingType(type)}>
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
                     )}
-                  </>
-                )}
-              </div>
-            ))
-          )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </main>
 

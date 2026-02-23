@@ -22,16 +22,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { objectsApi, stagesApi, volumeChecksApi } from '@/lib/api';
 import { ConstructionObject, Stage, VolumeCheck, VolumeCheckObjectSummary } from '@/lib/types';
-import { Plus, Calendar, TrendingUp, CheckCircle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const d = new Date(dateString);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
 }
 
 export default function TechnadzorPage() {
@@ -43,7 +51,7 @@ export default function TechnadzorPage() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [volumeChecks, setVolumeChecks] = useState<VolumeCheck[]>([]);
   const [summary, setSummary] = useState<VolumeCheckObjectSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Форма проверки
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -184,157 +192,212 @@ export default function TechnadzorPage() {
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto p-4">
         {/* Выбор объекта */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="w-full max-w-md">
-            <Label>Выберите объект</Label>
-            <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите объект" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Не выбран</SelectItem>
-                {objects.map((obj) => (
-                  <SelectItem key={obj.id} value={obj.id}>
-                    {obj.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="mb-6 w-full max-w-md">
+          <Label className="mb-1.5 block">Выберите объект</Label>
+          <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите объект" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Не выбран</SelectItem>
+              {objects.map((obj) => (
+                <SelectItem key={obj.id} value={obj.id}>
+                  {obj.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {selectedObjectId !== '__none__' && (
-          <>
-            {/* Сводка */}
-            {summary && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Средний прогресс</div>
-                  <div className="text-2xl font-bold text-indigo-600">
-                    {summary.averageProgress}%
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Всего этапов</div>
-                  <div className="text-2xl font-bold text-gray-700">
-                    {summary.stages.length}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="text-sm text-gray-500 mb-1">Завершённых</div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {summary.stages.filter(s => s.percent >= 100).length}
-                  </div>
+        {/* Сводка */}
+        {(() => {
+          const completed = summary?.stages.filter(s => s.percent >= 100).length || 0;
+          const total = summary?.stages.length || 0;
+          const avgProgress = summary?.averageProgress || 0;
+          return (
+            <div className="flex items-center gap-6 mb-6 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Прогресс</span>
+                <span className={`font-semibold ${
+                  avgProgress >= 80 ? 'text-green-600' :
+                  avgProgress >= 40 ? 'text-yellow-600' : 'text-foreground'
+                }`}>{avgProgress}%</span>
+                <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      avgProgress >= 80 ? 'bg-green-500' :
+                      avgProgress >= 40 ? 'bg-yellow-500' : 'bg-primary'
+                    }`}
+                    style={{ width: `${Math.min(avgProgress, 100)}%` }}
+                  />
                 </div>
               </div>
-            )}
+              <span className="text-muted-foreground/30">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Этапов</span>
+                <span className="font-semibold text-foreground">{total}</span>
+              </div>
+              <span className="text-muted-foreground/30">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Завершено</span>
+                <span className="font-semibold text-green-600">{completed}</span>
+                {total > 0 && (
+                  <span className="text-muted-foreground">/ {total}</span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
-            {/* Этапы со сводкой */}
-            {summary && summary.stages.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700">
-                  Этапы
-                </div>
-                <div className="divide-y">
-                  {summary.stages.map((stage) => (
-                    <div key={stage.stageId} className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium">{stage.stageName}</div>
-                        <div className="text-sm text-gray-500">
-                          {stage.checksCount} проверок
-                          {stage.lastCheckDate && (
-                            <span className="ml-2">
-                              • Последняя: {formatDate(stage.lastCheckDate)}
-                            </span>
-                          )}
-                        </div>
-                        {/* Прогресс-бар */}
-                        <div className="mt-2 w-full max-w-md">
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        {/* Этапы */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-sm text-foreground mb-2">Этапы</h3>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-xs">Этап</TableHead>
+                  <TableHead className="w-[200px] text-xs">Прогресс</TableHead>
+                  <TableHead className="w-[100px] text-xs text-center">Проверок</TableHead>
+                  <TableHead className="w-[140px] text-xs text-right">Последняя</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary && summary.stages.length > 0 ? (
+                  summary.stages.map((stage) => (
+                    <TableRow key={stage.stageId}>
+                      <TableCell>
+                        <div className="text-sm font-medium text-foreground">{stage.stageName}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                             <div
-                              className={`h-full transition-all ${
+                              className={`h-full rounded-full transition-all ${
                                 stage.percent >= 100
                                   ? 'bg-green-500'
                                   : stage.percent >= 50
                                   ? 'bg-yellow-500'
-                                  : 'bg-red-500'
+                                  : 'bg-primary'
                               }`}
                               style={{ width: `${Math.min(stage.percent, 100)}%` }}
                             />
                           </div>
+                          <Badge
+                            className={`text-xs min-w-[42px] justify-center ${
+                              stage.percent >= 100
+                                ? 'bg-green-100 text-green-700'
+                                : stage.percent >= 50
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-muted text-foreground'
+                            }`}
+                          >
+                            {stage.percent}%
+                          </Badge>
                         </div>
-                      </div>
-                      <div className="text-right ml-4">
-                        <Badge
-                          className={`text-lg px-3 py-1 ${
-                            stage.percent >= 100
-                              ? 'bg-green-100 text-green-700'
-                              : stage.percent >= 50
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {stage.percent}%
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-muted-foreground">
+                        {stage.checksCount}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {stage.lastCheckDate ? formatDate(stage.lastCheckDate) : '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      {selectedObjectId === '__none__' ? 'Выберите объект' : 'Этапов нет'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
-            {/* Список проверок */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700">
-                История проверок
-              </div>
+        {/* История проверок */}
+        <h3 className="font-semibold text-sm text-foreground mb-2">История проверок</h3>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[50px] text-xs">№</TableHead>
+                <TableHead className="text-xs">Этап</TableHead>
+                <TableHead className="w-[100px] text-xs">Дата</TableHead>
+                <TableHead className="w-[130px] text-xs">Прогресс</TableHead>
+                <TableHead className="text-xs">Автор</TableHead>
+                <TableHead className="text-xs">Комментарий</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoading ? (
-                <div className="p-8 text-center text-gray-500">Загрузка...</div>
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell><div className="h-4 w-5 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-16 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-40 bg-muted rounded" /></TableCell>
+                    </TableRow>
+                  ))}
+                </>
               ) : volumeChecks.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">Проверок нет</div>
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    {selectedObjectId === '__none__' ? 'Выберите объект' : 'Проверок нет'}
+                  </TableCell>
+                </TableRow>
               ) : (
-                <div className="divide-y">
-                  {volumeChecks.map((check) => {
-                    const stage = stages.find(s => s.id === check.stageId);
-                    return (
-                      <div key={check.id} className="px-4 py-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{stage?.name || 'Этап'}</div>
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                {formatDate(check.date)}
-                              </span>
-                            </div>
-                            {check.comment && (
-                              <div className="text-sm text-gray-500 mt-1">
-                                {check.comment}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className={`text-lg font-bold flex items-center gap-1 ${
-                              check.percent >= 100 ? 'text-green-600' :
-                              check.percent >= 50 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
-                              {check.percent >= 100 ? (
-                                <CheckCircle className="w-5 h-5" />
-                              ) : (
-                                <TrendingUp className="w-5 h-5" />
-                              )}
-                              {check.percent}%
-                            </div>
-                          </div>
+                volumeChecks.map((check, index) => {
+                  const stage = stages.find(s => s.id === check.stageId);
+                  return (
+                    <TableRow key={check.id}>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium text-foreground">
+                          {stage?.name || 'Этап'}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDate(check.date)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                check.percent >= 100
+                                  ? 'bg-green-500'
+                                  : check.percent >= 50
+                                  ? 'bg-yellow-500'
+                                  : 'bg-primary'
+                              }`}
+                              style={{ width: `${Math.min(check.percent, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-foreground w-8 text-right">
+                            {check.percent}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {check.user?.name || '—'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                        {check.comment || '—'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
-            </div>
-          </>
-        )}
+            </TableBody>
+          </Table>
+        </div>
       </main>
 
       {/* Форма добавления проверки */}

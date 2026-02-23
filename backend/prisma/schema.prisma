@@ -220,6 +220,7 @@ model ResourceCheck {
   stageId      String
   userId       String
   date         DateTime @db.Date
+  checkedAt    DateTime @default(now())
   actualPeople Int?
   comment      String?
   createdAt    DateTime @default(now())

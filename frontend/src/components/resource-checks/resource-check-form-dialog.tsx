@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { resourceChecksApi } from '@/lib/api';
-import { Stage, ResourceCheck } from '@/lib/types';
+import { stagesApi, resourceChecksApi } from '@/lib/api';
+import { ConstructionObject, Stage, ResourceCheck } from '@/lib/types';
 import { useAuth } from '@/contexts/auth-context';
 
 const resourceCheckSchema = z.object({
@@ -36,14 +36,13 @@ interface EquipmentEntry {
   equipmentTypeId: string;
   equipmentTypeName: string;
   quantity: number;
+  plannedQuantity: number;
 }
 
 interface ResourceCheckFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  objectId: string;
-  stages: Stage[];
-  selectedStageId?: string;
+  objects: ConstructionObject[];
   existingCheck?: ResourceCheck | null;
   onSuccess: () => void;
 }
@@ -52,15 +51,17 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
   const {
     open,
     onOpenChange,
-    stages,
-    selectedStageId,
+    objects,
     existingCheck,
     onSuccess,
   } = props;
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [stageId, setStageId] = useState<string>(selectedStageId || '');
+  const [objectId, setObjectId] = useState<string>('');
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [stagesLoading, setStagesLoading] = useState(false);
+  const [stageId, setStageId] = useState<string>('');
   const [equipment, setEquipment] = useState<EquipmentEntry[]>([]);
 
   const isEditing = !!existingCheck;
@@ -68,6 +69,20 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
   // Дата всегда текущая
   const today = new Date().toISOString().split('T')[0];
   const date = isEditing ? existingCheck.date.split('T')[0] : today;
+
+  // Живое время для новой проверки
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (open && !isEditing) {
+      setCurrentTime(new Date());
+      intervalRef.current = setInterval(() => setCurrentTime(new Date()), 1000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [open, isEditing]);
 
   // Можно редактировать только сегодняшнюю проверку и только свою
   const isOwnCheck = !existingCheck || existingCheck.userId === currentUser?.id;
@@ -86,20 +101,68 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
     },
   });
 
+  // Загрузка этапов при смене объекта
+  const loadStages = useCallback(async (objId: string) => {
+    if (!objId) {
+      setStages([]);
+      return;
+    }
+    setStagesLoading(true);
+    try {
+      const data = await stagesApi.getByObject(objId);
+      setStages(data);
+    } catch (err) {
+      console.error('Error loading stages:', err);
+      setStages([]);
+    } finally {
+      setStagesLoading(false);
+    }
+  }, []);
+
+  // При открытии диалога — инициализация
+  useEffect(() => {
+    if (open) {
+      if (isEditing && existingCheck) {
+        const editObjectId = existingCheck.stage.objectId || '';
+        setObjectId(editObjectId);
+        setStageId(existingCheck.stageId);
+        if (editObjectId) {
+          loadStages(editObjectId);
+        }
+      } else {
+        setObjectId('');
+        setStages([]);
+        setStageId('');
+        setEquipment([]);
+      }
+      reset({
+        actualPeople: existingCheck?.actualPeople?.toString() || '',
+        comment: existingCheck?.comment || '',
+      });
+      setError('');
+    }
+  }, [open, existingCheck, isEditing, reset, loadStages]);
+
+  // При смене объекта (не при редактировании)
+  const handleObjectChange = (newObjectId: string) => {
+    setObjectId(newObjectId);
+    setStageId('');
+    setEquipment([]);
+    loadStages(newObjectId);
+  };
+
   // Загружаем плановую технику при смене этапа
   useEffect(() => {
     if (stageId && open) {
       const stage = stages.find((s) => s.id === stageId);
       if (stage?.plannedEquipment) {
-        // Инициализируем список техники из плана этапа
-        // ВАЖНО: не показываем плановое количество!
         const equipmentList = stage.plannedEquipment.map((pe) => ({
           equipmentTypeId: pe.equipmentTypeId,
           equipmentTypeName: pe.equipmentType.name,
-          quantity: 0, // Факт по умолчанию 0
+          quantity: 0,
+          plannedQuantity: pe.quantity,
         }));
 
-        // Если редактируем, заполняем фактические значения
         if (existingCheck?.equipmentChecks) {
           equipmentList.forEach((eq) => {
             const existing = existingCheck.equipmentChecks.find(
@@ -118,16 +181,6 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
     }
   }, [stageId, stages, existingCheck, open]);
 
-  useEffect(() => {
-    if (open) {
-      setStageId(selectedStageId || existingCheck?.stageId || '');
-      reset({
-        actualPeople: existingCheck?.actualPeople?.toString() || '',
-        comment: existingCheck?.comment || '',
-      });
-    }
-  }, [open, selectedStageId, existingCheck, reset]);
-
   const updateEquipmentQuantity = (index: number, quantity: number) => {
     const updated = [...equipment];
     updated[index].quantity = quantity;
@@ -135,6 +188,10 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
   };
 
   const onSubmit = async (data: ResourceCheckFormData) => {
+    if (!objectId) {
+      setError('Выберите объект');
+      return;
+    }
     if (!stageId) {
       setError('Выберите этап');
       return;
@@ -178,7 +235,9 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
     }
   };
 
-  // Фильтруем этапы по дате (только те, у которых startDate <= date <= endDate)
+  const selectedStage = stages.find((s) => s.id === stageId);
+
+  // Фильтруем этапы по дате
   const availableStages = stages.filter((stage) => {
     if (!stage.startDate || !stage.endDate) return true;
     const stageStart = new Date(stage.startDate);
@@ -196,102 +255,179 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
           </DialogTitle>
         </DialogHeader>
 
+        {isEditing && !canEdit && (
+          <p className="text-sm text-amber-600">
+            {!isOwnCheck
+              ? 'Можно редактировать только свои проверки'
+              : 'Можно редактировать только сегодняшнюю проверку'}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Дата */}
+          {/* Дата и время */}
           <div className="space-y-2">
-            <Label>Дата проверки</Label>
+            <Label>Дата и время проверки</Label>
             <div className="text-sm px-3 py-2 border rounded-md bg-muted">
-              {new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
+              {isEditing && existingCheck.checkedAt
+                ? new Date(existingCheck.checkedAt).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : currentTime.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
             </div>
-            {isEditing && !canEdit && (
-              <p className="text-sm text-amber-600">
-                {!isOwnCheck
-                  ? 'Можно редактировать только свои проверки'
-                  : 'Можно редактировать только сегодняшнюю проверку'}
-              </p>
+          </div>
+
+          {/* Объект */}
+          <div className="space-y-2">
+            <Label htmlFor="object">Объект *</Label>
+            {isEditing ? (
+              <div className="text-sm px-3 py-2 border rounded-md bg-muted">
+                {existingCheck.stage.object?.name || '—'}
+              </div>
+            ) : (
+              <Select
+                value={objectId}
+                onValueChange={handleObjectChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите объект" />
+                </SelectTrigger>
+                <SelectContent>
+                  {objects.map((obj) => (
+                    <SelectItem key={obj.id} value={obj.id}>
+                      {obj.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
           {/* Этап */}
-          <div className="space-y-2">
-            <Label htmlFor="stage">Этап *</Label>
-            <Select
-              value={stageId}
-              onValueChange={setStageId}
-              disabled={isEditing}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите этап" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableStages.map((stage) => (
-                  <SelectItem key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Количество рабочих */}
-          <div className="space-y-2">
-            <Label htmlFor="actualPeople">Количество рабочих *</Label>
-            <Input
-              id="actualPeople"
-              type="number"
-              min="0"
-              {...register('actualPeople')}
-              placeholder="0"
-              disabled={!canEdit && isEditing}
-            />
-            {errors.actualPeople && (
-              <p className="text-sm text-red-500">{errors.actualPeople.message}</p>
-            )}
-          </div>
-
-          {/* Техника */}
-          {equipment.length > 0 && (
+          {objectId && (
             <div className="space-y-2">
-              <Label>Техника на объекте</Label>
-              <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
-                {equipment.map((entry, index) => (
-                  <div key={entry.equipmentTypeId} className="flex items-center gap-3">
-                    <span className="flex-1 text-sm">{entry.equipmentTypeName}</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={entry.quantity}
-                      onChange={(e) =>
-                        updateEquipmentQuantity(index, parseInt(e.target.value) || 0)
-                      }
-                      className="w-20"
-                      placeholder="0"
-                      disabled={!canEdit && isEditing}
-                    />
-                    <span className="text-sm text-gray-500">шт.</span>
+              <Label htmlFor="stage">Этап *</Label>
+              {isEditing ? (
+                <div className="text-sm px-3 py-2 border rounded-md bg-muted">
+                  {existingCheck.stage.name}
+                </div>
+              ) : (
+                <Select
+                  value={stageId}
+                  onValueChange={setStageId}
+                  disabled={stagesLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={stagesLoading ? 'Загрузка...' : 'Выберите этап'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableStages.map((stage) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
+          {/* Ресурсы: люди + техника */}
+          {stageId && (
+            <div className="space-y-4">
+              {/* Люди */}
+              <div className="space-y-2">
+                <Label>
+                  Люди
+                  {selectedStage?.plannedPeople != null && (
+                    <span className="text-xs text-muted-foreground font-normal ml-1">
+                      (план: {selectedStage.plannedPeople})
+                    </span>
+                  )}
+                </Label>
+                {isEditing && !canEdit ? (
+                  <div className="text-sm px-3 py-2 border rounded-md bg-muted">
+                    {existingCheck.actualPeople ?? 0} чел.
                   </div>
-                ))}
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="actualPeople"
+                        type="number"
+                        min="0"
+                        {...register('actualPeople')}
+                        placeholder="0"
+                        className="w-24"
+                      />
+                      <span className="text-sm text-muted-foreground">чел.</span>
+                    </div>
+                    {errors.actualPeople && (
+                      <p className="text-sm text-red-500">{errors.actualPeople.message}</p>
+                    )}
+                  </>
+                )}
               </div>
-              <p className="text-xs text-gray-500">
-                Укажите фактическое количество техники на объекте
-              </p>
+
+              {/* Техника */}
+              {equipment.map((entry, index) => (
+                <div key={entry.equipmentTypeId} className="space-y-2">
+                  <Label>
+                    {entry.equipmentTypeName}
+                    {entry.plannedQuantity > 0 && (
+                      <span className="text-xs text-muted-foreground font-normal ml-1">
+                        (план: {entry.plannedQuantity})
+                      </span>
+                    )}
+                  </Label>
+                  {isEditing && !canEdit ? (
+                    <div className="text-sm px-3 py-2 border rounded-md bg-muted">
+                      {entry.quantity} шт.
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={entry.quantity}
+                        onChange={(e) =>
+                          updateEquipmentQuantity(index, parseInt(e.target.value) || 0)
+                        }
+                        className="w-24"
+                        placeholder="0"
+                      />
+                      <span className="text-sm text-muted-foreground">шт.</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
           {/* Комментарий */}
           <div className="space-y-2">
             <Label htmlFor="comment">Комментарий</Label>
-            <Textarea
-              id="comment"
-              {...register('comment')}
-              placeholder="Дополнительная информация..."
-              rows={3}
-              disabled={!canEdit && isEditing}
-            />
+            {isEditing && !canEdit ? (
+              <div className="text-sm px-3 py-2 border rounded-md bg-muted min-h-[60px]">
+                {existingCheck.comment || '—'}
+              </div>
+            ) : (
+              <Textarea
+                id="comment"
+                {...register('comment')}
+                placeholder="Дополнительная информация..."
+                rows={3}
+              />
+            )}
           </div>
 
           {error && (
