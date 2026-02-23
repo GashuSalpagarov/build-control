@@ -14,14 +14,7 @@ export interface WizardObjectData {
 
 // Step 2: Contractor
 export interface WizardContractorData {
-  mode: 'select' | 'create';
   selectedContractorId: string;
-  newContractor: {
-    name: string;
-    inn: string;
-    phone: string;
-    email: string;
-  };
 }
 
 // Step 3: Stage equipment entry
@@ -39,23 +32,11 @@ export interface WizardStageData {
   budget: string;
   plannedPeople: string;
   equipment: WizardEquipmentEntry[];
-  isEditing: boolean;
-}
-
-// Step 4: New user to create
-export interface WizardNewUser {
-  tempId: string;
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  role: string;
 }
 
 // Step 4: Users
 export interface WizardUsersData {
   selectedUserIds: string[];
-  newUsers: WizardNewUser[];
 }
 
 // Submit progress
@@ -88,14 +69,11 @@ export const initialWizardState: WizardState = {
     status: 'PLANNED',
   },
   contractor: {
-    mode: 'select',
     selectedContractorId: '',
-    newContractor: { name: '', inn: '', phone: '', email: '' },
   },
   stages: [],
   users: {
     selectedUserIds: [],
-    newUsers: [],
   },
   isSubmitting: false,
   submitProgress: {

@@ -38,6 +38,7 @@ interface UserFormDialogProps {
   onOpenChange: (open: boolean) => void;
   user?: UserWithAssignments | null;
   onSuccess: () => void;
+  onCreated?: (user: UserWithAssignments) => void;
 }
 
 const roles: Role[] = ['MINISTER', 'TECHNADZOR', 'ACCOUNTANT', 'INSPECTOR', 'CONTRACTOR', 'GOVERNMENT'];
@@ -47,6 +48,7 @@ export function UserFormDialog({
   onOpenChange,
   user,
   onSuccess,
+  onCreated,
 }: UserFormDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -107,13 +109,14 @@ export function UserFormDialog({
           setIsLoading(false);
           return;
         }
-        await usersApi.create({
+        const created = await usersApi.create({
           name: data.name,
           email: data.email,
           password: data.password,
           phone: data.phone || undefined,
           role: data.role,
         });
+        onCreated?.(created);
       }
 
       reset();

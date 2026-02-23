@@ -1,9 +1,15 @@
 'use client';
 
-import { forwardRef, useImperativeHandle, useState, useEffect, Dispatch } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect, Dispatch, MutableRefObject } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -15,7 +21,8 @@ import { Card } from '@/components/ui/card';
 import { equipmentTypesApi } from '@/lib/api';
 import { EquipmentType } from '@/lib/types';
 import { WizardStageData, WizardObjectData } from './wizard-types';
-import { Plus, Trash2, Pencil, Wrench, Check, X } from 'lucide-react';
+import { EquipmentTypeFormDialog } from '@/components/equipment-types/equipment-type-form-dialog';
+import { Plus, Trash2, Pencil, Wrench } from 'lucide-react';
 
 const CREATE_NEW_VALUE = '__create_new__';
 
@@ -25,46 +32,21 @@ function EquipmentSection({
   onAdd,
   onRemove,
   onUpdate,
-  onCreateType,
+  onOpenCreateDialog,
 }: {
   equipment: { equipmentTypeId: string; quantity: number }[];
   equipmentTypes: EquipmentType[];
   onAdd: () => void;
   onRemove: (index: number) => void;
   onUpdate: (index: number, field: string, value: any) => void;
-  onCreateType: (name: string) => Promise<EquipmentType>;
+  onOpenCreateDialog: (index: number) => void;
 }) {
-  const [creatingIndex, setCreatingIndex] = useState<number | null>(null);
-  const [newTypeName, setNewTypeName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
   const handleSelectChange = (index: number, value: string) => {
     if (value === CREATE_NEW_VALUE) {
-      setCreatingIndex(index);
-      setNewTypeName('');
+      onOpenCreateDialog(index);
     } else {
       onUpdate(index, 'equipmentTypeId', value);
     }
-  };
-
-  const handleCreateType = async (index: number) => {
-    if (!newTypeName.trim() || isSaving) return;
-    setIsSaving(true);
-    try {
-      const created = await onCreateType(newTypeName.trim());
-      onUpdate(index, 'equipmentTypeId', created.id);
-      setCreatingIndex(null);
-      setNewTypeName('');
-    } catch {
-      // keep the input open on error
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const cancelCreate = () => {
-    setCreatingIndex(null);
-    setNewTypeName('');
   };
 
   return (
@@ -82,67 +64,27 @@ function EquipmentSection({
         <div className="space-y-2">
           {equipment.map((entry, index) => (
             <div key={index} className="flex gap-2 items-center">
-              {creatingIndex === index ? (
-                <div className="flex-1 flex gap-1.5 items-center">
-                  <Input
-                    value={newTypeName}
-                    onChange={(e) => setNewTypeName(e.target.value)}
-                    placeholder="Название техники..."
-                    className="text-sm h-8 flex-1"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleCreateType(index);
-                      }
-                      if (e.key === 'Escape') cancelCreate();
-                    }}
-                    disabled={isSaving}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleCreateType(index)}
-                    disabled={!newTypeName.trim() || isSaving}
-                  >
-                    <Check className="w-3.5 h-3.5 text-primary" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={cancelCreate}
-                    disabled={isSaving}
-                  >
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={entry.equipmentTypeId}
-                  onValueChange={(value) => handleSelectChange(index, value)}
-                >
-                  <SelectTrigger className="flex-1 text-sm h-8">
-                    <SelectValue placeholder="Тип техники" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {equipmentTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value={CREATE_NEW_VALUE} className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5">
-                        <Plus className="w-3.5 h-3.5" />
-                        Создать новый тип
-                      </span>
+              <Select
+                value={entry.equipmentTypeId}
+                onValueChange={(value) => handleSelectChange(index, value)}
+              >
+                <SelectTrigger className="flex-1 text-sm h-8">
+                  <SelectValue placeholder="Тип техники" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+                  ))}
+                  <SelectItem value={CREATE_NEW_VALUE} className="text-primary font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5" />
+                      Создать новый тип
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 type="number"
                 min="1"
@@ -156,10 +98,7 @@ function EquipmentSection({
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => {
-                  if (creatingIndex === index) cancelCreate();
-                  onRemove(index);
-                }}
+                onClick={() => onRemove(index)}
               >
                 <Trash2 className="w-3.5 h-3.5 text-red-500" />
               </Button>
@@ -171,39 +110,60 @@ function EquipmentSection({
   );
 }
 
-export interface WizardStepStagesRef {
-  validate: () => Promise<boolean>;
-}
+/* ── Stage Dialog (create / edit) ─────────────────────────── */
 
-interface WizardStepStagesProps {
-  stages: WizardStageData[];
-  objectData: WizardObjectData;
-  dispatch: Dispatch<any>;
-}
-
-function StageCard({
+function WizardStageDialog({
+  open,
+  onOpenChange,
   stage,
   objectData,
   equipmentTypes,
-  onUpdate,
-  onRemove,
-  onCreateEquipmentType,
+  onSave,
+  onOpenCreateEqDialog,
+  assignRef,
 }: {
-  stage: WizardStageData;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  stage: WizardStageData | null;
   objectData: WizardObjectData;
   equipmentTypes: EquipmentType[];
-  onUpdate: (data: Partial<WizardStageData>) => void;
-  onRemove: () => void;
-  onCreateEquipmentType: (name: string) => Promise<EquipmentType>;
+  onSave: (data: WizardStageData) => void;
+  onOpenCreateEqDialog: (equipmentIndex: number) => void;
+  assignRef: MutableRefObject<((index: number, typeId: string) => void) | null>;
 }) {
   const [localData, setLocalData] = useState({
-    name: stage.name,
-    startDate: stage.startDate,
-    endDate: stage.endDate,
-    budget: stage.budget,
-    plannedPeople: stage.plannedPeople,
-    equipment: stage.equipment,
+    name: '',
+    startDate: objectData.startDate || '',
+    endDate: objectData.endDate || '',
+    budget: '',
+    plannedPeople: '',
+    equipment: [] as { equipmentTypeId: string; quantity: number }[],
   });
+
+  // Reset local state when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (stage) {
+        setLocalData({
+          name: stage.name,
+          startDate: stage.startDate,
+          endDate: stage.endDate,
+          budget: stage.budget,
+          plannedPeople: stage.plannedPeople,
+          equipment: stage.equipment.map((e) => ({ ...e })),
+        });
+      } else {
+        setLocalData({
+          name: '',
+          startDate: objectData.startDate || '',
+          endDate: objectData.endDate || '',
+          budget: '',
+          plannedPeople: '',
+          equipment: [],
+        });
+      }
+    }
+  }, [open, stage, objectData.startDate, objectData.endDate]);
 
   const updateLocal = (field: string, value: any) => {
     setLocalData((prev) => ({ ...prev, [field]: value }));
@@ -232,158 +192,167 @@ function StageCard({
     }));
   };
 
-  const saveStage = () => {
+  // Called from parent after an equipment type is created
+  const assignEquipmentType = (equipmentIndex: number, typeId: string) => {
+    setLocalData((prev) => ({
+      ...prev,
+      equipment: prev.equipment.map((e, i) =>
+        i === equipmentIndex ? { ...e, equipmentTypeId: typeId } : e
+      ),
+    }));
+  };
+
+  const handleSave = () => {
     if (!localData.name.trim()) return;
-    onUpdate({
+    onSave({
+      tempId: stage?.tempId ?? crypto.randomUUID(),
       ...localData,
-      isEditing: false,
     });
+    onOpenChange(false);
   };
 
-  const cancelEdit = () => {
-    if (!stage.name) {
-      // New stage that was never saved — remove it
-      onRemove();
-    } else {
-      // Restore from saved data
-      setLocalData({
-        name: stage.name,
-        startDate: stage.startDate,
-        endDate: stage.endDate,
-        budget: stage.budget,
-        plannedPeople: stage.plannedPeople,
-        equipment: stage.equipment,
-      });
-      onUpdate({ isEditing: false });
-    }
-  };
+  // Expose assignEquipmentType so parent can call it after equipment type creation
+  assignRef.current = assignEquipmentType;
 
-  if (!stage.isEditing) {
-    // Collapsed view
-    return (
-      <Card className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">{stage.name}</div>
-            <div className="text-xs text-gray-500 flex gap-3 mt-1">
-              {stage.startDate && (
-                <span>{stage.startDate} — {stage.endDate || '...'}</span>
-              )}
-              {stage.budget && <span>{Number(stage.budget).toLocaleString('ru-RU')} руб.</span>}
-              {stage.equipment.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Wrench className="w-3 h-3" />
-                  {stage.equipment.length}
-                </span>
-              )}
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{stage ? 'Редактирование этапа' : 'Новый этап'}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 pt-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Название *</Label>
+            <Input
+              value={localData.name}
+              onChange={(e) => updateLocal('name', e.target.value)}
+              placeholder="Например: Подготовительные работы"
+              className="text-sm"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Дата начала</Label>
+              <Input
+                type="date"
+                value={localData.startDate}
+                onChange={(e) => updateLocal('startDate', e.target.value)}
+                min={objectData.startDate || undefined}
+                max={objectData.endDate || undefined}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Дата окончания</Label>
+              <Input
+                type="date"
+                value={localData.endDate}
+                onChange={(e) => updateLocal('endDate', e.target.value)}
+                min={objectData.startDate || undefined}
+                max={objectData.endDate || undefined}
+                className="text-sm"
+              />
             </div>
           </div>
-          <div className="flex gap-1 ml-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onUpdate({ isEditing: true })}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onRemove}
-            >
-              <Trash2 className="w-4 h-4 text-red-500" />
-            </Button>
-          </div>
-        </div>
-      </Card>
-    );
-  }
 
-  // Expanded editing view
-  return (
-    <Card className="p-4 border-primary/30 bg-primary/5">
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Название *</Label>
-          <Input
-            value={localData.name}
-            onChange={(e) => updateLocal('name', e.target.value)}
-            placeholder="Например: Подготовительные работы"
-            className="text-sm"
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Бюджет (руб.)</Label>
+              <Input
+                type="number"
+                value={localData.budget}
+                onChange={(e) => updateLocal('budget', e.target.value)}
+                placeholder="0"
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">План. людей</Label>
+              <Input
+                type="number"
+                value={localData.plannedPeople}
+                onChange={(e) => updateLocal('plannedPeople', e.target.value)}
+                placeholder="0"
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          <EquipmentSection
+            equipment={localData.equipment}
+            equipmentTypes={equipmentTypes}
+            onAdd={addEquipment}
+            onRemove={removeEquipment}
+            onUpdate={updateEquipment}
+            onOpenCreateDialog={onOpenCreateEqDialog}
           />
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Дата начала</Label>
-            <Input
-              type="date"
-              value={localData.startDate}
-              onChange={(e) => updateLocal('startDate', e.target.value)}
-              min={objectData.startDate || undefined}
-              max={objectData.endDate || undefined}
-              className="text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Дата окончания</Label>
-            <Input
-              type="date"
-              value={localData.endDate}
-              onChange={(e) => updateLocal('endDate', e.target.value)}
-              min={objectData.startDate || undefined}
-              max={objectData.endDate || undefined}
-              className="text-sm"
-            />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Отмена
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={!localData.name.trim()}
+            >
+              Сохранить
+            </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Бюджет (руб.)</Label>
-            <Input
-              type="number"
-              value={localData.budget}
-              onChange={(e) => updateLocal('budget', e.target.value)}
-              placeholder="0"
-              className="text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">План. людей</Label>
-            <Input
-              type="number"
-              value={localData.plannedPeople}
-              onChange={(e) => updateLocal('plannedPeople', e.target.value)}
-              placeholder="0"
-              className="text-sm"
-            />
+/* ── Stage Card (collapsed view only) ─────────────────────── */
+
+function StageCard({
+  stage,
+  onEdit,
+  onRemove,
+}: {
+  stage: WizardStageData;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <Card className="p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm truncate">{stage.name}</div>
+          <div className="text-xs text-gray-500 flex gap-3 mt-1">
+            {stage.startDate && (
+              <span>{stage.startDate} — {stage.endDate || '...'}</span>
+            )}
+            {stage.budget && <span>{Number(stage.budget).toLocaleString('ru-RU')} руб.</span>}
+            {stage.equipment.length > 0 && (
+              <span className="flex items-center gap-1">
+                <Wrench className="w-3 h-3" />
+                {stage.equipment.length}
+              </span>
+            )}
           </div>
         </div>
-
-        {/* Equipment section */}
-        <EquipmentSection
-          equipment={localData.equipment}
-          equipmentTypes={equipmentTypes}
-          onAdd={addEquipment}
-          onRemove={removeEquipment}
-          onUpdate={updateEquipment}
-          onCreateType={onCreateEquipmentType}
-        />
-
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-            Отмена
+        <div className="flex gap-1 ml-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+          >
+            <Pencil className="w-4 h-4" />
           </Button>
           <Button
             type="button"
+            variant="ghost"
             size="sm"
-            onClick={saveStage}
-            disabled={!localData.name.trim()}
+            onClick={onRemove}
           >
-            Сохранить
+            <Trash2 className="w-4 h-4 text-red-500" />
           </Button>
         </div>
       </div>
@@ -391,10 +360,31 @@ function StageCard({
   );
 }
 
+/* ── Main step component ──────────────────────────────────── */
+
+export interface WizardStepStagesRef {
+  validate: () => Promise<boolean>;
+}
+
+interface WizardStepStagesProps {
+  stages: WizardStageData[];
+  objectData: WizardObjectData;
+  dispatch: Dispatch<any>;
+}
+
 export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStagesProps>(
   function WizardStepStages({ stages, objectData, dispatch }, ref) {
     const [equipmentTypes, setEquipmentTypes] = useState<EquipmentType[]>([]);
     const [error, setError] = useState('');
+
+    // Stage dialog state
+    const [stageDialogOpen, setStageDialogOpen] = useState(false);
+    const [editingStage, setEditingStage] = useState<WizardStageData | null>(null);
+
+    // Equipment type creation dialog state
+    const [eqDialogOpen, setEqDialogOpen] = useState(false);
+    const [pendingEquipmentIndex, setPendingEquipmentIndex] = useState<number | null>(null);
+    const assignEqRef = useRef<((index: number, typeId: string) => void) | null>(null);
 
     const loadEquipmentTypes = () => {
       equipmentTypesApi.getAll().then(setEquipmentTypes).catch(console.error);
@@ -404,10 +394,17 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
       loadEquipmentTypes();
     }, []);
 
-    const handleCreateEquipmentType = async (name: string): Promise<EquipmentType> => {
-      const created = await equipmentTypesApi.create(name);
+    const handleOpenCreateEqDialog = (equipmentIndex: number) => {
+      setPendingEquipmentIndex(equipmentIndex);
+      setEqDialogOpen(true);
+    };
+
+    const handleEquipmentTypeCreated = (created: EquipmentType) => {
       setEquipmentTypes((prev) => [...prev, created]);
-      return created;
+      if (pendingEquipmentIndex !== null) {
+        assignEqRef.current?.(pendingEquipmentIndex, created.id);
+        setPendingEquipmentIndex(null);
+      }
     };
 
     useImperativeHandle(ref, () => ({
@@ -417,29 +414,26 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
           setError('Добавьте хотя бы один этап');
           return false;
         }
-        const hasUnsaved = stages.some((s) => s.isEditing);
-        if (hasUnsaved) {
-          setError('Сохраните все этапы перед продолжением');
-          return false;
-        }
         return true;
       },
     }));
 
     const addStage = () => {
-      dispatch({
-        type: 'ADD_STAGE',
-        stage: {
-          tempId: crypto.randomUUID(),
-          name: '',
-          startDate: objectData.startDate || '',
-          endDate: objectData.endDate || '',
-          budget: '',
-          plannedPeople: '',
-          equipment: [],
-          isEditing: true,
-        },
-      });
+      setEditingStage(null);
+      setStageDialogOpen(true);
+    };
+
+    const editStage = (stage: WizardStageData) => {
+      setEditingStage(stage);
+      setStageDialogOpen(true);
+    };
+
+    const handleStageSave = (savedData: WizardStageData) => {
+      if (editingStage === null) {
+        dispatch({ type: 'ADD_STAGE', stage: savedData });
+      } else {
+        dispatch({ type: 'UPDATE_STAGE', tempId: savedData.tempId, data: savedData });
+      }
     };
 
     return (
@@ -461,15 +455,10 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
             <StageCard
               key={stage.tempId}
               stage={stage}
-              objectData={objectData}
-              equipmentTypes={equipmentTypes}
-              onUpdate={(data) =>
-                dispatch({ type: 'UPDATE_STAGE', tempId: stage.tempId, data })
-              }
+              onEdit={() => editStage(stage)}
               onRemove={() =>
                 dispatch({ type: 'REMOVE_STAGE', tempId: stage.tempId })
               }
-              onCreateEquipmentType={handleCreateEquipmentType}
             />
           ))}
         </div>
@@ -477,6 +466,23 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
         {error && (
           <p className="text-sm text-red-500 text-center">{error}</p>
         )}
+
+        <WizardStageDialog
+          open={stageDialogOpen}
+          onOpenChange={setStageDialogOpen}
+          stage={editingStage}
+          objectData={objectData}
+          equipmentTypes={equipmentTypes}
+          onSave={handleStageSave}
+          onOpenCreateEqDialog={handleOpenCreateEqDialog}
+          assignRef={assignEqRef}
+        />
+
+        <EquipmentTypeFormDialog
+          open={eqDialogOpen}
+          onOpenChange={setEqDialogOpen}
+          onCreated={handleEquipmentTypeCreated}
+        />
       </div>
     );
   }

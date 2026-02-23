@@ -1,6 +1,5 @@
 import {
   objectsApi,
-  contractorsApi,
   stagesApi,
   usersApi,
 } from '@/lib/api';
@@ -12,32 +11,15 @@ export async function wizardSubmit(
   state: WizardState,
   onProgress: ProgressCallback
 ): Promise<string> {
-  let contractorId: string | undefined;
   let objectId: string;
-  const createdUserIds: string[] = [];
 
   try {
-    // 1. Create contractor if needed
-    if (state.contractor.mode === 'create' && state.contractor.newContractor.name.trim()) {
-      onProgress({ current: 'Создание подрядчика...' });
-      const contractor = await contractorsApi.create({
-        name: state.contractor.newContractor.name,
-        inn: state.contractor.newContractor.inn || undefined,
-        phone: state.contractor.newContractor.phone || undefined,
-        email: state.contractor.newContractor.email || undefined,
-      });
-      contractorId = contractor.id;
-      onProgress({ completed: ['contractor'] });
-    } else if (state.contractor.mode === 'select' && state.contractor.selectedContractorId) {
-      contractorId = state.contractor.selectedContractorId;
-    }
-
-    // 2. Create object
+    // 1. Create object
     onProgress({ current: 'Создание объекта...' });
     const obj = await objectsApi.create({
       name: state.object.name,
       address: state.object.address || undefined,
-      contractorId: contractorId || undefined,
+      contractorId: state.contractor.selectedContractorId || undefined,
       startDate: state.object.startDate || undefined,
       endDate: state.object.endDate || undefined,
       budget: state.object.budget ? parseFloat(state.object.budget) : undefined,
@@ -45,11 +27,11 @@ export async function wizardSubmit(
     });
     objectId = obj.id;
     onProgress({
-      completed: [...(contractorId && state.contractor.mode === 'create' ? ['contractor'] : []), 'object'],
+      completed: ['object'],
       createdObjectId: objectId,
     });
 
-    // 3. Create stages sequentially
+    // 2. Create stages sequentially
     for (let i = 0; i < state.stages.length; i++) {
       const stage = state.stages[i];
       onProgress({ current: `Создание этапа: ${stage.name}...` });
@@ -68,29 +50,12 @@ export async function wizardSubmit(
         sortOrder: i,
         plannedEquipment: validEquipment.length > 0 ? validEquipment : undefined,
       });
-
-      // Progress tracking for stages is included in the overall flow
     }
 
-    // 4. Create new users
-    for (const newUser of state.users.newUsers) {
-      onProgress({ current: `Создание пользователя: ${newUser.name}...` });
-      const created = await usersApi.create({
-        name: newUser.name,
-        email: newUser.email,
-        password: newUser.password,
-        phone: newUser.phone || undefined,
-        role: newUser.role,
-      });
-      createdUserIds.push(created.id);
-    }
-
-    // 5. Assign users (existing + newly created)
-    const allUserIds = [...state.users.selectedUserIds, ...createdUserIds];
-    for (const userId of allUserIds) {
+    // 3. Assign selected users
+    for (const userId of state.users.selectedUserIds) {
       onProgress({ current: 'Назначение пользователей...' });
       try {
-        // Get existing assignments to avoid overwriting them
         const existingObjects = await usersApi.getAssignedObjects(userId);
         const existingIds = existingObjects.map((o) => o.id);
         if (!existingIds.includes(objectId)) {

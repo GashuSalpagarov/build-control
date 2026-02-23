@@ -5,7 +5,6 @@ import {
   WizardContractorData,
   WizardUsersData,
   WizardStageData,
-  WizardNewUser,
   SubmitProgress,
   initialWizardState,
 } from './wizard-types';
@@ -19,9 +18,6 @@ type WizardAction =
   | { type: 'UPDATE_STAGE'; tempId: string; data: Partial<WizardStageData> }
   | { type: 'REMOVE_STAGE'; tempId: string }
   | { type: 'TOGGLE_SELECTED_USER'; userId: string }
-  | { type: 'ADD_NEW_USER'; user: WizardNewUser }
-  | { type: 'UPDATE_NEW_USER'; tempId: string; data: Partial<WizardNewUser> }
-  | { type: 'REMOVE_NEW_USER'; tempId: string }
   | { type: 'SET_SUBMITTING'; value: boolean }
   | { type: 'SET_SUBMIT_PROGRESS'; progress: Partial<SubmitProgress> }
   | { type: 'RESET' };
@@ -70,35 +66,6 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         },
       };
     }
-
-    case 'ADD_NEW_USER':
-      return {
-        ...state,
-        users: {
-          ...state.users,
-          newUsers: [...state.users.newUsers, action.user],
-        },
-      };
-
-    case 'UPDATE_NEW_USER':
-      return {
-        ...state,
-        users: {
-          ...state.users,
-          newUsers: state.users.newUsers.map((u) =>
-            u.tempId === action.tempId ? { ...u, ...action.data } : u
-          ),
-        },
-      };
-
-    case 'REMOVE_NEW_USER':
-      return {
-        ...state,
-        users: {
-          ...state.users,
-          newUsers: state.users.newUsers.filter((u) => u.tempId !== action.tempId),
-        },
-      };
 
     case 'SET_SUBMITTING':
       return { ...state, isSubmitting: action.value };

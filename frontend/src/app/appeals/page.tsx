@@ -167,7 +167,7 @@ export default function AppealsPage() {
     }
   };
 
-  const canCreate = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user?.role || '');
+  const canCreate = ['CONTRACTOR', 'SUPERADMIN'].includes(user?.role || '');
 
   const headerAction = useMemo(() => {
     if (!canCreate) return undefined;

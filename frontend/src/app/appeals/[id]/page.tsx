@@ -157,7 +157,7 @@ export default function AppealDetailPage() {
   }
 
   const canChangeStatus = ['MINISTER', 'SUPERADMIN'].includes(user.role);
-  const canSendMessage = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canSendMessage = ['CONTRACTOR', 'TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
 
   return (
     <div className="flex-1 bg-background">

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { resourceChecksApi } from '@/lib/api';
 import { Stage, ResourceCheck } from '@/lib/types';
+import { useAuth } from '@/contexts/auth-context';
 
 const resourceCheckSchema = z.object({
   actualPeople: z.string().min(1, 'Укажите количество рабочих'),
@@ -43,7 +44,6 @@ interface ResourceCheckFormDialogProps {
   objectId: string;
   stages: Stage[];
   selectedStageId?: string;
-  selectedDate?: string;
   existingCheck?: ResourceCheck | null;
   onSuccess: () => void;
 }
@@ -54,21 +54,24 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
     onOpenChange,
     stages,
     selectedStageId,
-    selectedDate,
     existingCheck,
     onSuccess,
   } = props;
+  const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [stageId, setStageId] = useState<string>(selectedStageId || '');
-  const [date, setDate] = useState<string>(selectedDate || new Date().toISOString().split('T')[0]);
   const [equipment, setEquipment] = useState<EquipmentEntry[]>([]);
 
   const isEditing = !!existingCheck;
 
-  // Проверяем, можно ли редактировать (только сегодня)
+  // Дата всегда текущая
   const today = new Date().toISOString().split('T')[0];
-  const canEdit = date === today;
+  const date = isEditing ? existingCheck.date.split('T')[0] : today;
+
+  // Можно редактировать только сегодняшнюю проверку и только свою
+  const isOwnCheck = !existingCheck || existingCheck.userId === currentUser?.id;
+  const canEdit = date === today && isOwnCheck;
 
   const {
     register,
@@ -118,13 +121,12 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
   useEffect(() => {
     if (open) {
       setStageId(selectedStageId || existingCheck?.stageId || '');
-      setDate(selectedDate || existingCheck?.date?.split('T')[0] || today);
       reset({
         actualPeople: existingCheck?.actualPeople?.toString() || '',
         comment: existingCheck?.comment || '',
       });
     }
-  }, [open, selectedStageId, selectedDate, existingCheck, reset, today]);
+  }, [open, selectedStageId, existingCheck, reset]);
 
   const updateEquipmentQuantity = (index: number, quantity: number) => {
     const updated = [...equipment];
@@ -197,18 +199,19 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Дата */}
           <div className="space-y-2">
-            <Label htmlFor="date">Дата проверки</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              max={today}
-              disabled={isEditing}
-            />
-            {!canEdit && isEditing && (
+            <Label>Дата проверки</Label>
+            <div className="text-sm px-3 py-2 border rounded-md bg-muted">
+              {new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </div>
+            {isEditing && !canEdit && (
               <p className="text-sm text-amber-600">
-                Можно редактировать только сегодняшнюю проверку
+                {!isOwnCheck
+                  ? 'Можно редактировать только свои проверки'
+                  : 'Можно редактировать только сегодняшнюю проверку'}
               </p>
             )}
           </div>

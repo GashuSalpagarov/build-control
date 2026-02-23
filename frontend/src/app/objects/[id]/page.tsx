@@ -743,6 +743,7 @@ export default function ObjectDetailPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  className="h-6 w-6 p-0"
                                   onClick={() => handleEditStage(stage)}
                                   title="Редактировать"
                                 >

@@ -30,6 +30,7 @@ interface ContractorFormDialogProps {
   onOpenChange: (open: boolean) => void;
   contractor?: Contractor | null;
   onSuccess: () => void;
+  onCreated?: (contractor: Contractor) => void;
 }
 
 export function ContractorFormDialog({
@@ -37,6 +38,7 @@ export function ContractorFormDialog({
   onOpenChange,
   contractor,
   onSuccess,
+  onCreated,
 }: ContractorFormDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -84,7 +86,8 @@ export function ContractorFormDialog({
       if (isEditing && contractor) {
         await contractorsApi.update(contractor.id, payload);
       } else {
-        await contractorsApi.create(payload);
+        const created = await contractorsApi.create(payload);
+        onCreated?.(created);
       }
 
       reset();

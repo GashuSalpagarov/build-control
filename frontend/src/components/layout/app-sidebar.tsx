@@ -62,12 +62,13 @@ export function AppSidebar() {
 
   const canManageUsers = ['MINISTER', 'SUPERADMIN'].includes(user.role);
   const canManageContractors = ['MINISTER', 'TECHNADZOR', 'SUPERADMIN'].includes(user.role);
-  const canInspect = ['INSPECTOR', 'TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canInspect = ['INSPECTOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canManagePayments = ['ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
   const canCheckVolumes = ['TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
-  const canViewAppeals = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
+  const canViewAppeals = ['CONTRACTOR', 'TECHNADZOR', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role);
+  const canViewObjects = !['INSPECTOR', 'ACCOUNTANT'].includes(user.role);
   const navItems = [
-    { href: '/objects', label: 'Объекты', icon: Building2, show: true },
+    { href: '/objects', label: 'Объекты', icon: Building2, show: canViewObjects },
     { href: '/inspector', label: 'Проверки', icon: ClipboardCheck, show: canInspect },
     { href: '/volumes', label: 'Объёмы', icon: Scale, show: canCheckVolumes },
     { href: '/accountant', label: 'Платежи', icon: CreditCard, show: canManagePayments },
