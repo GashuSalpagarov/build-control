@@ -1,17 +1,24 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { objectsApi } from '@/lib/api';
 import { ConstructionObject } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ObjectCreationWizard } from '@/components/objects/object-creation-wizard';
 import { statusStyles, deviationStyles } from '@/lib/design-system';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 function formatCurrency(amount: number | undefined | null): string {
   if (!amount) return '—';
@@ -20,6 +27,20 @@ function formatCurrency(amount: number | undefined | null): string {
     currency: 'RUB',
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function formatDateRange(startDate?: string, endDate?: string): string {
+  if (!startDate && !endDate) return '—';
+  const fmt = (d: string) => {
+    const date = new Date(d);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2);
+    return `${dd}.${mm}.${yy}`;
+  };
+  if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+  if (startDate) return `с ${fmt(startDate)}`;
+  return `до ${fmt(endDate!)}`;
 }
 
 function calculateDeviation(obj: ConstructionObject): number | null {
@@ -36,35 +57,29 @@ function calculateDeviation(obj: ConstructionObject): number | null {
 
   if (today < start) return null;
   if (today > end) {
-    // После окончания: отклонение = прогресс - 100
     return (obj.progress ?? 0) - 100;
   }
 
-  // Плановый прогресс по датам
   const total = end.getTime() - start.getTime();
   const elapsed = today.getTime() - start.getTime();
   const plannedProgress = Math.round((elapsed / total) * 100);
 
-  // Отклонение = факт - план
   return (obj.progress ?? 0) - plannedProgress;
 }
 
 function getStatusStyle(obj: ConstructionObject) {
   const { status } = obj;
 
-  // For non-IN_PROGRESS statuses, return predefined style
   if (status !== 'IN_PROGRESS') {
     return statusStyles[status];
   }
 
-  // IN_PROGRESS - calculate deviation
   const deviation = calculateDeviation(obj);
 
   if (deviation === null) {
     return statusStyles.IN_PROGRESS;
   }
 
-  // Deviation-based styling
   if (deviation > 0) {
     return deviationStyles.ahead(deviation);
   }
@@ -134,72 +149,92 @@ export default function ObjectsPage() {
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {/* Заголовок таблицы */}
-          <div className="grid grid-cols-[50px_1fr_100px_150px_150px] gap-4 px-6 py-3 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <div>№</div>
-            <div>Объект</div>
-            <div>Прогресс</div>
-            <div>Статус</div>
-            <div className="text-right">Бюджет</div>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[50px] text-xs">№</TableHead>
+                <TableHead className="text-xs">Объект</TableHead>
+                <TableHead className="w-[140px] text-xs">Сроки</TableHead>
+                <TableHead className="w-[130px] text-xs">Прогресс</TableHead>
+                <TableHead className="w-[140px] text-xs">Статус</TableHead>
+                <TableHead className="w-[130px] text-xs text-right">Бюджет</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell><div className="h-4 w-5 bg-muted rounded" /></TableCell>
+                      <TableCell>
+                        <div className="h-4 w-48 bg-muted rounded mb-1.5" />
+                        <div className="h-3 w-32 bg-muted rounded" />
+                      </TableCell>
+                      <TableCell><div className="h-3 w-24 bg-muted rounded" /></TableCell>
+                      <TableCell>
+                        <div className="h-1.5 w-full bg-muted rounded-full mb-1" />
+                        <div className="h-3 w-8 bg-muted rounded" />
+                      </TableCell>
+                      <TableCell><div className="h-5 w-20 bg-muted rounded-full" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              ) : objects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Объекты не найдены
+                  </TableCell>
+                </TableRow>
+              ) : (
+                objects.map((obj, index) => {
+                  const progress = obj.progress ?? 0;
+                  const status = getStatusStyle(obj);
 
-          {/* Список объектов */}
-          {isLoading ? (
-            <>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-[50px_1fr_100px_150px_150px] gap-4 px-6 py-4 border-b last:border-b-0 animate-pulse"
-                >
-                  <div className="h-6 w-6 bg-gray-200 rounded" />
-                  <div>
-                    <div className="h-5 w-64 bg-gray-200 rounded mb-2" />
-                    <div className="h-4 w-40 bg-gray-200 rounded" />
-                  </div>
-                  <div className="h-6 w-12 bg-gray-200 rounded" />
-                  <div className="h-6 w-24 bg-gray-200 rounded" />
-                  <div className="h-5 w-28 bg-gray-200 rounded ml-auto" />
-                </div>
-              ))}
-            </>
-          ) : objects.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              Объекты не найдены
-            </div>
-          ) : (
-            objects.map((obj, index) => {
-              const progress = obj.progress ?? 0;
-              const status = getStatusStyle(obj);
-
-              return (
-                <Link
-                  key={obj.id}
-                  href={`/objects/${obj.id}`}
-                  className="grid grid-cols-[50px_1fr_100px_150px_150px] gap-4 px-6 py-4 border-b last:border-b-0 hover:bg-indigo-50 transition-colors items-center"
-                >
-                  <div className="text-lg font-bold text-gray-400">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 flex items-center">
-                      {obj.name}
-                      <ChevronRight className="w-4 h-4 ml-1 text-indigo-500" />
-                    </div>
-                    <div className="text-sm text-gray-500">{obj.address || '—'}</div>
-                  </div>
-                  <div className="text-xl font-bold text-indigo-600">
-                    {progress}%
-                  </div>
-                  <div>
-                    <Badge className={status.className}>{status.label}</Badge>
-                  </div>
-                  <div className="text-right font-semibold text-gray-700">
-                    {formatCurrency(obj.budget ? Number(obj.budget) : null)}
-                  </div>
-                </Link>
-              );
-            })
-          )}
+                  return (
+                    <TableRow
+                      key={obj.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/objects/${obj.id}`)}
+                    >
+                      <TableCell className="text-sm text-muted-foreground">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium text-foreground">{obj.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {obj.address || '—'}
+                          {obj.contractor?.name && (
+                            <span className="before:content-['·'] before:mx-1.5">{obj.contractor.name}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDateRange(obj.startDate, obj.endDate)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-foreground w-8 text-right">{progress}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`text-xs ${status.className}`}>{status.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-medium text-foreground">
+                        {formatCurrency(obj.budget ? Number(obj.budget) : null)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
       </main>
 
