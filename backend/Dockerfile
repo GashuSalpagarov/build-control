@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build tools for bcrypt native compilation
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -24,12 +27,15 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Build tools for bcrypt
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy Prisma client from builder
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
@@ -39,6 +45,9 @@ COPY --from=builder /app/dist ./dist
 
 # Create uploads directory
 RUN mkdir -p uploads
+
+# Remove build tools to reduce image size
+RUN apk del python3 make g++
 
 # Set environment
 ENV NODE_ENV=production
