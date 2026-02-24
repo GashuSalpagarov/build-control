@@ -72,6 +72,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [debugLog, setDebugLog] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -82,10 +83,13 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      setDebugLog(prev => [...prev, `API: ${process.env.NEXT_PUBLIC_API_URL || 'не задан'}`, `Login: ${email}`]);
       await login(email, password);
       router.push('/objects');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка входа');
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      setDebugLog(prev => [...prev, `Error: ${msg}`]);
     } finally {
       setIsLoading(false);
     }
@@ -96,10 +100,13 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      setDebugLog(prev => [...prev, `API: ${process.env.NEXT_PUBLIC_API_URL || 'не задан'}`, `QuickLogin: ${userEmail}`]);
       await login(userEmail, userPassword);
       router.push('/objects');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка входа');
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      setDebugLog(prev => [...prev, `Error: ${msg}`]);
     } finally {
       setIsLoading(false);
     }
@@ -161,14 +168,14 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {process.env.NODE_ENV === 'development' && (
+          {(
             <div className="pt-4 border-t">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Быстрый вход (dev)</span>
+                      <span>Быстрый вход</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -212,6 +219,13 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      {debugLog.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-black/90 text-green-400 text-xs font-mono p-3 max-h-40 overflow-auto">
+          {debugLog.map((log, i) => (
+            <div key={i}>{log}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
