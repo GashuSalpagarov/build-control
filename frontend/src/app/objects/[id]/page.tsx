@@ -1233,7 +1233,7 @@ export default function ObjectDetailPage() {
                   <div>
                     <div className="text-xs text-muted-foreground">Оплачено</div>
                     <div className="text-sm font-bold text-green-600">
-                      {payStage?.totalPaid ? Number(payStage.totalPaid).toLocaleString('ru-RU') : '0'} ₽
+                      {payStage?.paid ? Number(payStage.paid).toLocaleString('ru-RU') : '0'} ₽
                     </div>
                   </div>
                   <div className="h-8 w-px bg-border" />

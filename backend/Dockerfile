@@ -3,8 +3,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Build tools for bcrypt native compilation
-RUN apk add --no-cache python3 make g++
+# Build tools for bcrypt + OpenSSL for Prisma
+RUN apk add --no-cache python3 make g++ openssl
 
 # Copy package files
 COPY package*.json ./
@@ -27,8 +27,8 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Build tools for bcrypt
-RUN apk add --no-cache python3 make g++
+# Build tools for bcrypt + OpenSSL for Prisma
+RUN apk add --no-cache python3 make g++ openssl
 
 # Copy package files
 COPY package*.json ./
