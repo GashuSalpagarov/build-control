@@ -46,5 +46,5 @@ ENV NODE_ENV=production
 # Expose port
 EXPOSE 3001
 
-# Run migrations and start server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Sync schema and start server
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]
