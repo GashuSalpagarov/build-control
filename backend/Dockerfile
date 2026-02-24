@@ -56,4 +56,4 @@ ENV NODE_ENV=production
 EXPOSE 3001
 
 # Sync schema and start server
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/src/main.js"]
