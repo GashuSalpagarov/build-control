@@ -7,13 +7,6 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { WizardObjectData } from './wizard-types';
 
 const objectSchema = z.object({
@@ -22,7 +15,6 @@ const objectSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   budget: z.string().optional(),
-  status: z.string().optional(),
 });
 
 export interface WizardStepObjectRef {
@@ -51,7 +43,6 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
         startDate: data.startDate,
         endDate: data.endDate,
         budget: data.budget,
-        status: data.status || 'PLANNED',
       },
     });
 
@@ -123,39 +114,17 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="wiz-budget">Бюджет (руб.)</Label>
-            <MoneyInput
-              id="wiz-budget"
-              value={watch('budget') || ''}
-              onChange={(v) => {
-                setValue('budget', v);
-                handleFieldChange('budget', v);
-              }}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="wiz-status">Статус</Label>
-            <Select
-              defaultValue={data.status || 'PLANNED'}
-              onValueChange={(value) => {
-                setValue('status', value);
-                handleFieldChange('status', value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите статус" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PLANNED">Запланировано</SelectItem>
-                <SelectItem value="IN_PROGRESS">В работе</SelectItem>
-                <SelectItem value="COMPLETED">Завершён</SelectItem>
-                <SelectItem value="SUSPENDED">Приостановлен</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="wiz-budget">Бюджет (руб.)</Label>
+          <MoneyInput
+            id="wiz-budget"
+            value={watch('budget') || ''}
+            onChange={(v) => {
+              setValue('budget', v);
+              handleFieldChange('budget', v);
+            }}
+            placeholder="0"
+          />
         </div>
       </div>
     );
