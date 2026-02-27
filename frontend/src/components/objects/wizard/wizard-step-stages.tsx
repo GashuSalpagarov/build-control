@@ -28,6 +28,23 @@ import { Plus, Trash2, Pencil, Wrench } from 'lucide-react';
 
 const CREATE_NEW_VALUE = '__create_new__';
 
+function calcDays(start: string, end: string): number | null {
+  if (!start || !end) return null;
+  const s = new Date(start);
+  const e = new Date(end);
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+  const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+  return diff >= 0 ? diff : null;
+}
+
+function pluralDays(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} день`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} дня`;
+  return `${n} дней`;
+}
+
 function EquipmentSection({
   equipment,
   equipmentTypes,
@@ -123,6 +140,8 @@ function WizardStageDialog({
   onSave,
   onOpenCreateEqDialog,
   assignRef,
+  allocatedBudget,
+  totalBudget,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -132,6 +151,8 @@ function WizardStageDialog({
   onSave: (data: WizardStageData) => void;
   onOpenCreateEqDialog: (equipmentIndex: number) => void;
   assignRef: MutableRefObject<((index: number, typeId: string) => void) | null>;
+  allocatedBudget: number;
+  totalBudget: number;
 }) {
   const [localData, setLocalData] = useState({
     name: '',
@@ -204,8 +225,13 @@ function WizardStageDialog({
     }));
   };
 
+  const currentStageBudget = Number(localData.budget) || 0;
+  const remaining = totalBudget - allocatedBudget - currentStageBudget;
+  const budgetExceeded = totalBudget > 0 && remaining < 0;
+
   const handleSave = () => {
     if (!localData.name.trim()) return;
+    if (budgetExceeded) return;
     onSave({
       tempId: stage?.tempId ?? crypto.randomUUID(),
       ...localData,
@@ -259,6 +285,11 @@ function WizardStageDialog({
               />
             </div>
           </div>
+          {calcDays(localData.startDate, localData.endDate) !== null && (
+            <p className="text-xs text-muted-foreground">
+              Длительность: {pluralDays(calcDays(localData.startDate, localData.endDate)!)}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -269,6 +300,17 @@ function WizardStageDialog({
                 placeholder="0"
                 className="text-sm"
               />
+              {totalBudget > 0 && (
+                budgetExceeded ? (
+                  <p className="text-xs text-red-500">
+                    Превышает остаток на {formatCurrency(Math.abs(remaining))}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Доступно: {formatCurrency(remaining)}
+                  </p>
+                )
+              )}
             </div>
             <div className="space-y-1">
               <Label className="text-xs">План. людей</Label>
@@ -298,7 +340,7 @@ function WizardStageDialog({
             <Button
               type="button"
               onClick={handleSave}
-              disabled={!localData.name.trim()}
+              disabled={!localData.name.trim() || budgetExceeded}
             >
               Сохранить
             </Button>
@@ -327,7 +369,10 @@ function StageCard({
           <div className="font-medium text-sm truncate">{stage.name}</div>
           <div className="text-xs text-gray-500 flex gap-3 mt-1">
             {stage.startDate && (
-              <span>{stage.startDate} — {stage.endDate || '...'}</span>
+              <span>
+                {stage.startDate} — {stage.endDate || '...'}
+                {calcDays(stage.startDate, stage.endDate) !== null && ` (${pluralDays(calcDays(stage.startDate, stage.endDate)!)})`}
+              </span>
             )}
             {stage.budget && <span>{formatCurrency(Number(stage.budget))}</span>}
             {stage.equipment.length > 0 && (
@@ -437,6 +482,13 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
       }
     };
 
+    const totalBudget = Number(objectData.budget) || 0;
+    const allocatedBudget = stages.reduce((sum, s) => sum + (Number(s.budget) || 0), 0);
+    const budgetRemaining = totalBudget - allocatedBudget;
+    const dialogAllocated = stages
+      .filter((s) => s.tempId !== editingStage?.tempId)
+      .reduce((sum, s) => sum + (Number(s.budget) || 0), 0);
+
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -450,6 +502,16 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
             Добавить этап
           </Button>
         </div>
+
+        {totalBudget > 0 && (
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <div>Общий бюджет: {formatCurrency(totalBudget)}</div>
+            <div>Распределено: {formatCurrency(allocatedBudget)}</div>
+            <div className={budgetRemaining < 0 ? 'text-red-500' : ''}>
+              Остаток: {formatCurrency(budgetRemaining)}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
           {stages.map((stage) => (
@@ -477,6 +539,8 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
           onSave={handleStageSave}
           onOpenCreateEqDialog={handleOpenCreateEqDialog}
           assignRef={assignEqRef}
+          allocatedBudget={dialogAllocated}
+          totalBudget={totalBudget}
         />
 
         <EquipmentTypeFormDialog
