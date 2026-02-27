@@ -2,6 +2,7 @@
 
 import { forwardRef, useImperativeHandle, useRef, useState, useEffect, Dispatch, MutableRefObject } from 'react';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +23,7 @@ import { equipmentTypesApi } from '@/lib/api';
 import { EquipmentType } from '@/lib/types';
 import { WizardStageData, WizardObjectData } from './wizard-types';
 import { EquipmentTypeFormDialog } from '@/components/equipment-types/equipment-type-form-dialog';
+import { formatCurrency } from '@/lib/format';
 import { Plus, Trash2, Pencil, Wrench } from 'lucide-react';
 
 const CREATE_NEW_VALUE = '__create_new__';
@@ -261,10 +263,9 @@ function WizardStageDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Бюджет (руб.)</Label>
-              <Input
-                type="number"
+              <MoneyInput
                 value={localData.budget}
-                onChange={(e) => updateLocal('budget', e.target.value)}
+                onChange={(v) => updateLocal('budget', v)}
                 placeholder="0"
                 className="text-sm"
               />
@@ -328,7 +329,7 @@ function StageCard({
             {stage.startDate && (
               <span>{stage.startDate} — {stage.endDate || '...'}</span>
             )}
-            {stage.budget && <span>{Number(stage.budget).toLocaleString('ru-RU')} руб.</span>}
+            {stage.budget && <span>{formatCurrency(Number(stage.budget))}</span>}
             {stage.equipment.length > 0 && (
               <span className="flex items-center gap-1">
                 <Wrench className="w-3 h-3" />

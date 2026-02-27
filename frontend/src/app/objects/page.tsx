@@ -19,15 +19,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-
-function formatCurrency(amount: number | undefined | null): string {
-  if (!amount) return '—';
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import { formatCurrency } from '@/lib/format';
 
 function formatDateRange(startDate?: string, endDate?: string): string {
   if (!startDate && !endDate) return '—';

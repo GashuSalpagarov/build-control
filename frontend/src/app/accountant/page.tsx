@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -33,15 +34,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Plus, AlertTriangle } from 'lucide-react';
-
-function formatCurrency(amount: number | undefined | null): string {
-  if (!amount && amount !== 0) return '—';
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import { formatCurrency } from '@/lib/format';
 
 function formatDate(dateString: string) {
   const d = new Date(dateString);
@@ -424,13 +417,11 @@ export default function AccountantPage() {
 
             <div className="space-y-2">
               <Label>Сумма (руб.) *</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
+              <MoneyInput
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                placeholder="0.00"
+                onChange={(v) => setFormData({ ...formData, amount: v })}
+                allowDecimals
+                placeholder="0"
               />
               {isOverpayment && (
                 <div className="flex items-center gap-2 text-amber-600 text-sm">

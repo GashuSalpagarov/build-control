@@ -25,6 +25,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { formatCurrency } from '@/lib/format';
 
 type CalendarScale = 'days' | 'weeks' | 'decades' | 'months';
 type CalendarZoom = 50 | 75 | 100 | 125 | 150;
@@ -794,7 +795,7 @@ export default function ObjectDetailPage() {
                                 </div>
                                 {stageBudget && (
                                   <div className="text-xs text-gray-500">
-                                    {Number(stageBudget).toLocaleString('ru-RU')} ₽
+                                    {formatCurrency(Number(stageBudget))}
                                   </div>
                                 )}
                                 {/* Бейджи Объём и Финансы */}
@@ -1226,14 +1227,14 @@ export default function ObjectDetailPage() {
                   <div>
                     <div className="text-xs text-muted-foreground">Бюджет</div>
                     <div className="text-sm font-bold text-foreground">
-                      {stageBudget ? Number(stageBudget).toLocaleString('ru-RU') : '—'} ₽
+                      {stageBudget ? formatCurrency(Number(stageBudget)) : '—'}
                     </div>
                   </div>
                   <div className="h-8 w-px bg-border" />
                   <div>
                     <div className="text-xs text-muted-foreground">Оплачено</div>
                     <div className="text-sm font-bold text-green-600">
-                      {payStage?.paid ? Number(payStage.paid).toLocaleString('ru-RU') : '0'} ₽
+                      {payStage?.paid ? formatCurrency(Number(payStage.paid)) : formatCurrency(0)}
                     </div>
                   </div>
                   <div className="h-8 w-px bg-border" />
@@ -1283,7 +1284,7 @@ export default function ObjectDetailPage() {
                               <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
                               <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{dd}.{mm}.{yy}</TableCell>
                               <TableCell className="text-right text-sm font-medium text-green-600 whitespace-nowrap">
-                                {Number(payment.amount).toLocaleString('ru-RU')} ₽
+                                {formatCurrency(Number(payment.amount))}
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{payment.user?.name || '—'}</TableCell>
                               <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{payment.comment || '—'}</TableCell>

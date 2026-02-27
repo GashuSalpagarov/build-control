@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -59,6 +60,7 @@ export function ObjectFormDialog({
     register,
     handleSubmit,
     setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<ObjectFormData>({
@@ -187,10 +189,10 @@ export function ObjectFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="budget">Бюджет (руб.)</Label>
-              <Input
+              <MoneyInput
                 id="budget"
-                type="number"
-                {...register('budget')}
+                value={watch('budget') || ''}
+                onChange={(v) => setValue('budget', v)}
                 placeholder="0"
               />
             </div>

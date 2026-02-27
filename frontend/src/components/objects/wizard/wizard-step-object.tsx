@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -39,6 +40,7 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
       register,
       handleSubmit,
       setValue,
+      watch,
       trigger,
       formState: { errors },
     } = useForm({
@@ -124,12 +126,13 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="wiz-budget">Бюджет (руб.)</Label>
-            <Input
+            <MoneyInput
               id="wiz-budget"
-              type="number"
-              {...register('budget', {
-                onChange: (e) => handleFieldChange('budget', e.target.value),
-              })}
+              value={watch('budget') || ''}
+              onChange={(v) => {
+                setValue('budget', v);
+                handleFieldChange('budget', v);
+              }}
               placeholder="0"
             />
           </div>
