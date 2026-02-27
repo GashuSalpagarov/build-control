@@ -142,6 +142,7 @@ function WizardStageDialog({
   assignRef,
   allocatedBudget,
   totalBudget,
+  defaultStartDate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -153,6 +154,7 @@ function WizardStageDialog({
   assignRef: MutableRefObject<((index: number, typeId: string) => void) | null>;
   allocatedBudget: number;
   totalBudget: number;
+  defaultStartDate: string;
 }) {
   const [localData, setLocalData] = useState({
     name: '',
@@ -178,7 +180,7 @@ function WizardStageDialog({
       } else {
         setLocalData({
           name: '',
-          startDate: objectData.startDate || '',
+          startDate: defaultStartDate,
           endDate: objectData.endDate || '',
           budget: '',
           plannedPeople: '',
@@ -186,7 +188,7 @@ function WizardStageDialog({
         });
       }
     }
-  }, [open, stage, objectData.startDate, objectData.endDate]);
+  }, [open, stage, defaultStartDate, objectData.endDate]);
 
   const updateLocal = (field: string, value: any) => {
     setLocalData((prev) => ({ ...prev, [field]: value }));
@@ -406,6 +408,18 @@ function StageCard({
   );
 }
 
+function hasOverlappingStages(stages: WizardStageData[]): boolean {
+  const dated = stages.filter((s) => s.startDate && s.endDate);
+  for (let i = 0; i < dated.length; i++) {
+    for (let j = i + 1; j < dated.length; j++) {
+      if (dated[i].startDate < dated[j].endDate && dated[j].startDate < dated[i].endDate) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /* ── Main step component ──────────────────────────────────── */
 
 export interface WizardStepStagesRef {
@@ -482,6 +496,9 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
       }
     };
 
+    const lastStageEnd = stages.length > 0 ? stages[stages.length - 1].endDate : '';
+    const defaultStartDate = lastStageEnd || objectData.startDate || '';
+
     const totalBudget = Number(objectData.budget) || 0;
     const allocatedBudget = stages.reduce((sum, s) => sum + (Number(s.budget) || 0), 0);
     const budgetRemaining = totalBudget - allocatedBudget;
@@ -513,6 +530,10 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
           </div>
         )}
 
+        {stages.length >= 2 && hasOverlappingStages(stages) && (
+          <p className="text-xs text-amber-600">Обнаружено пересечение этапов</p>
+        )}
+
         <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
           {stages.map((stage) => (
             <StageCard
@@ -541,6 +562,7 @@ export const WizardStepStages = forwardRef<WizardStepStagesRef, WizardStepStages
           assignRef={assignEqRef}
           allocatedBudget={dialogAllocated}
           totalBudget={totalBudget}
+          defaultStartDate={defaultStartDate}
         />
 
         <EquipmentTypeFormDialog
