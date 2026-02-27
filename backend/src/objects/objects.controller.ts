@@ -11,6 +11,7 @@ import {
 import { ObjectsService } from './objects.service';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
+import { AssignUsersDto } from './dto/assign-users.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -60,6 +61,16 @@ export class ObjectsController {
     @CurrentUser('tenantId') tenantId: string,
   ) {
     return this.objectsService.calculateProgress(id, tenantId);
+  }
+
+  @Patch(':id/users')
+  @Roles(Role.MINISTER, Role.SUPERADMIN)
+  assignUsers(
+    @Param('id') id: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Body() dto: AssignUsersDto,
+  ) {
+    return this.objectsService.assignUsers(id, tenantId, dto.userIds);
   }
 
   @Patch(':id')

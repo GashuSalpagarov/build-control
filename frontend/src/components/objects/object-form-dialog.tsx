@@ -21,8 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { objectsApi, contractorsApi } from '@/lib/api';
-import { ConstructionObject, ObjectStatus, Contractor } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { objectsApi, contractorsApi, usersApi } from '@/lib/api';
+import { ConstructionObject, ObjectStatus, Contractor, UserWithAssignments, Role, roleLabels } from '@/lib/types';
 
 const objectSchema = z.object({
   name: z.string().min(1, 'Название обязательно'),
@@ -53,6 +54,8 @@ export function ObjectFormDialog({
   const [error, setError] = useState('');
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [selectedContractorId, setSelectedContractorId] = useState<string>('__none__');
+  const [allUsers, setAllUsers] = useState<UserWithAssignments[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
 
   const isEditing = !!object;
 
@@ -76,6 +79,13 @@ export function ObjectFormDialog({
     },
   });
 
+  const assignableRoles: { role: Role; label: string }[] = [
+    { role: 'ACCOUNTANT', label: 'Бухгалтер' },
+    { role: 'TECHNADZOR', label: 'Технадзор' },
+    { role: 'INSPECTOR', label: 'Проверяющий' },
+    { role: 'CONTRACTOR', label: 'Подрядчик' },
+  ];
+
   useEffect(() => {
     if (open) {
       contractorsApi.getAll().then(setContractors).catch(console.error);
@@ -89,8 +99,16 @@ export function ObjectFormDialog({
         budget: object?.budget?.toString() || '',
         status: object?.status || 'PLANNED',
       });
+
+      if (isEditing) {
+        usersApi.getAll().then(setAllUsers).catch(console.error);
+        const assignedIds = new Set(
+          (object?.userAssignments || []).map((a) => a.userId)
+        );
+        setSelectedUserIds(assignedIds);
+      }
     }
-  }, [open, object, reset]);
+  }, [open, object, reset, isEditing]);
 
   const onSubmit = async (data: ObjectFormData) => {
     setIsLoading(true);
@@ -109,6 +127,11 @@ export function ObjectFormDialog({
 
       if (isEditing && object) {
         await objectsApi.update(object.id, payload);
+        try {
+          await objectsApi.assignUsers(object.id, Array.from(selectedUserIds));
+        } catch {
+          // Ошибки назначения пользователей не блокируют сохранение
+        }
       } else {
         await objectsApi.create(payload);
       }
@@ -126,7 +149,7 @@ export function ObjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Редактировать объект' : 'Добавить объект'}
@@ -214,6 +237,51 @@ export function ObjectFormDialog({
               </Select>
             </div>
           </div>
+
+          {isEditing && (
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Назначенные пользователи</Label>
+              {assignableRoles.map(({ role, label }) => {
+                const usersForRole = allUsers.filter(
+                  (u) => u.role === role && u.isActive
+                );
+                if (usersForRole.length === 0) return null;
+                return (
+                  <div key={role} className="space-y-1.5">
+                    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                    <div className="space-y-1 pl-1">
+                      {usersForRole.map((user) => (
+                        <label
+                          key={user.id}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={selectedUserIds.has(user.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedUserIds((prev) => {
+                                const next = new Set(prev);
+                                if (checked) {
+                                  next.add(user.id);
+                                } else {
+                                  next.delete(user.id);
+                                }
+                                return next;
+                              });
+                            }}
+                          />
+                          <span className="text-sm">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {allUsers.length === 0 && (
+                <p className="text-sm text-muted-foreground">Загрузка пользователей...</p>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="text-sm text-red-500 text-center">{error}</div>

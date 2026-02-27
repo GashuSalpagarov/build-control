@@ -244,6 +244,11 @@ export interface ConstructionObject {
   contractor?: Contractor;
   stages?: Stage[];
   progress?: number;
+  userAssignments?: {
+    id: string;
+    userId: string;
+    user: { id: string; name: string; email: string; role: Role; isActive: boolean };
+  }[];
 }
 
 // Статусы для отображения

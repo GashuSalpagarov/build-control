@@ -106,6 +106,13 @@ export class ObjectsService {
             },
           },
         },
+        userAssignments: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, role: true, isActive: true },
+            },
+          },
+        },
       },
     });
 
@@ -137,6 +144,24 @@ export class ObjectsService {
         },
       },
     });
+  }
+
+  async assignUsers(id: string, tenantId: string | null, userIds: string[]) {
+    await this.findOne(id, tenantId);
+
+    // Удаляем все текущие назначения
+    await this.prisma.userObjectAssignment.deleteMany({
+      where: { objectId: id },
+    });
+
+    // Создаём новые назначения
+    if (userIds.length > 0) {
+      await this.prisma.userObjectAssignment.createMany({
+        data: userIds.map((userId) => ({ userId, objectId: id })),
+      });
+    }
+
+    return this.findOne(id, tenantId);
   }
 
   async remove(id: string, tenantId: string | null) {

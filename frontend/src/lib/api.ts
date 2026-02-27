@@ -142,6 +142,8 @@ export const objectsApi = {
     api.patch<ConstructionObject>(`/objects/${id}`, data),
   delete: (id: string) => api.delete(`/objects/${id}`),
   getProgress: (id: string) => api.get<number>(`/objects/${id}/progress`),
+  assignUsers: (id: string, userIds: string[]) =>
+    api.patch<ConstructionObject>(`/objects/${id}/users`, { userIds }),
 };
 
 // Stages API
