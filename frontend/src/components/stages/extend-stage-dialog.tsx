@@ -23,7 +23,15 @@ const extendSchema = z.object({
   newStartDate: z.string().optional(),
   newEndDate: z.string().min(1, 'Новая дата окончания обязательна'),
   reason: z.string().min(10, 'Причина должна содержать минимум 10 символов'),
-});
+}).refine(
+  (data) => {
+    if (data.newStartDate && data.newEndDate) {
+      return data.newEndDate > data.newStartDate;
+    }
+    return true;
+  },
+  { message: 'Дата окончания должна быть позже даты начала', path: ['newEndDate'] }
+);
 
 type ExtendFormData = z.infer<typeof extendSchema>;
 
@@ -53,6 +61,7 @@ export function ExtendStageDialog({
     formState: { errors },
   } = useForm<ExtendFormData>({
     resolver: zodResolver(extendSchema),
+    mode: 'onChange',
     defaultValues: {
       newStartDate: '',
       newEndDate: '',
@@ -142,28 +151,30 @@ export function ExtendStageDialog({
           </div>
 
           {/* New dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="newStartDate">Новая дата начала</Label>
-              <Input
-                id="newStartDate"
-                type="date"
-                {...register('newStartDate')}
-              />
-              <p className="text-xs text-gray-500">Оставьте без изменений, если не нужно менять</p>
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newStartDate">Новая дата начала</Label>
+                <Input
+                  id="newStartDate"
+                  type="date"
+                  {...register('newStartDate')}
+                />
+                <p className="text-xs text-gray-500">Оставьте без изменений, если не нужно менять</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newEndDate">Новая дата окончания *</Label>
+                <Input
+                  id="newEndDate"
+                  type="date"
+                  {...register('newEndDate')}
+                  max={objectEndDate?.split('T')[0]}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="newEndDate">Новая дата окончания *</Label>
-              <Input
-                id="newEndDate"
-                type="date"
-                {...register('newEndDate')}
-                max={objectEndDate?.split('T')[0]}
-              />
-              {errors.newEndDate && (
-                <p className="text-sm text-red-500">{errors.newEndDate.message}</p>
-              )}
-            </div>
+            {errors.newEndDate && (
+              <p className="text-sm text-red-500">{errors.newEndDate.message}</p>
+            )}
           </div>
 
           {/* Extension indicator */}

@@ -164,10 +164,12 @@ function WizardStageDialog({
     plannedPeople: '',
     equipment: [] as { equipmentTypeId: string; quantity: number }[],
   });
+  const [dateError, setDateError] = useState('');
 
   // Reset local state when dialog opens
   useEffect(() => {
     if (open) {
+      setDateError('');
       if (stage) {
         setLocalData({
           name: stage.name,
@@ -192,6 +194,9 @@ function WizardStageDialog({
 
   const updateLocal = (field: string, value: any) => {
     setLocalData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'startDate' || field === 'endDate') {
+      setDateError('');
+    }
   };
 
   const addEquipment = () => {
@@ -234,6 +239,11 @@ function WizardStageDialog({
   const handleSave = () => {
     if (!localData.name.trim()) return;
     if (budgetExceeded) return;
+    if (localData.startDate && localData.endDate && localData.endDate <= localData.startDate) {
+      setDateError('Дата окончания должна быть позже даты начала');
+      return;
+    }
+    setDateError('');
     onSave({
       tempId: stage?.tempId ?? crypto.randomUUID(),
       ...localData,
@@ -287,6 +297,9 @@ function WizardStageDialog({
               />
             </div>
           </div>
+          {dateError && (
+            <p className="text-xs text-red-500">{dateError}</p>
+          )}
           {calcDays(localData.startDate, localData.endDate) !== null && (
             <p className="text-xs text-muted-foreground">
               Длительность: {pluralDays(calcDays(localData.startDate, localData.endDate)!)}

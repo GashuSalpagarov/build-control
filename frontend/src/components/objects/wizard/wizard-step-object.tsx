@@ -15,7 +15,15 @@ const objectSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   budget: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return data.endDate > data.startDate;
+    }
+    return true;
+  },
+  { message: 'Дата окончания должна быть позже даты начала', path: ['endDate'] }
+);
 
 export interface WizardStepObjectRef {
   validate: () => Promise<boolean>;
@@ -37,6 +45,7 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
       formState: { errors },
     } = useForm({
       resolver: zodResolver(objectSchema),
+      mode: 'onChange',
       defaultValues: {
         name: data.name,
         address: data.address,
@@ -91,27 +100,32 @@ export const WizardStepObject = forwardRef<WizardStepObjectRef, WizardStepObject
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="wiz-startDate">Дата начала</Label>
-            <Input
-              id="wiz-startDate"
-              type="date"
-              {...register('startDate', {
-                onChange: (e) => handleFieldChange('startDate', e.target.value),
-              })}
-            />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="wiz-startDate">Дата начала</Label>
+              <Input
+                id="wiz-startDate"
+                type="date"
+                {...register('startDate', {
+                  onChange: (e) => handleFieldChange('startDate', e.target.value),
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="wiz-endDate">Дата окончания</Label>
+              <Input
+                id="wiz-endDate"
+                type="date"
+                {...register('endDate', {
+                  onChange: (e) => handleFieldChange('endDate', e.target.value),
+                })}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="wiz-endDate">Дата окончания</Label>
-            <Input
-              id="wiz-endDate"
-              type="date"
-              {...register('endDate', {
-                onChange: (e) => handleFieldChange('endDate', e.target.value),
-              })}
-            />
-          </div>
+          {errors.endDate && (
+            <p className="text-sm text-red-500">{errors.endDate.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">

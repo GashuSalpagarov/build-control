@@ -90,6 +90,7 @@ export function StageFormDialog({
     formState: { errors },
   } = useForm<StageFormData>({
     resolver: zodResolver(stageSchema),
+    mode: 'onChange',
     defaultValues: {
       name: stage?.name || '',
       startDate: stage?.startDate?.split('T')[0] || '',

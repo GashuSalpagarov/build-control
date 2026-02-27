@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsDateString, IsNumber, IsEnum } from 'class-validator';
 import { ObjectStatus } from '@prisma/client';
+import { IsAfterDate } from '../../common/validators/date-range.validator';
 
 export class CreateObjectDto {
   @IsString()
@@ -19,6 +20,7 @@ export class CreateObjectDto {
 
   @IsOptional()
   @IsDateString()
+  @IsAfterDate('startDate')
   endDate?: string;
 
   @IsOptional()

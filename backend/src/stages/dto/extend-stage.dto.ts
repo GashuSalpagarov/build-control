@@ -1,4 +1,5 @@
 import { IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsAfterDate } from '../../common/validators/date-range.validator';
 
 export class ExtendStageDto {
   @IsOptional()
@@ -6,6 +7,7 @@ export class ExtendStageDto {
   newStartDate?: string;
 
   @IsDateString()
+  @IsAfterDate('newStartDate')
   newEndDate: string;
 
   @IsString()

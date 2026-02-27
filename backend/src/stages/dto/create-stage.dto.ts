@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsDateString, IsNumber, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsAfterDate } from '../../common/validators/date-range.validator';
 
 export class PlannedEquipmentDto {
   @IsString()
@@ -22,6 +23,7 @@ export class CreateStageDto {
 
   @IsOptional()
   @IsDateString()
+  @IsAfterDate('startDate')
   endDate?: string;
 
   @IsOptional()

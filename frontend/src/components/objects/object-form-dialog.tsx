@@ -33,7 +33,18 @@ const objectSchema = z.object({
   endDate: z.string().optional(),
   budget: z.string().optional(),
   status: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return data.endDate > data.startDate;
+    }
+    return true;
+  },
+  {
+    message: 'Дата окончания должна быть позже даты начала',
+    path: ['endDate'],
+  }
+);
 
 type ObjectFormData = z.infer<typeof objectSchema>;
 
@@ -68,6 +79,7 @@ export function ObjectFormDialog({
     formState: { errors },
   } = useForm<ObjectFormData>({
     resolver: zodResolver(objectSchema),
+    mode: 'onChange',
     defaultValues: {
       name: object?.name || '',
       address: object?.address || '',
@@ -198,15 +210,20 @@ export function ObjectFormDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Дата начала</Label>
-              <Input id="startDate" type="date" {...register('startDate')} />
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Дата начала</Label>
+                <Input id="startDate" type="date" {...register('startDate')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Дата окончания</Label>
+                <Input id="endDate" type="date" {...register('endDate')} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">Дата окончания</Label>
-              <Input id="endDate" type="date" {...register('endDate')} />
-            </div>
+            {errors.endDate && (
+              <p className="text-sm text-red-500">{errors.endDate.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
