@@ -433,6 +433,9 @@ export default function ObjectDetailPage() {
     setIsStageDialogOpen(true);
   };
 
+  const lastStageEnd = stages.length > 0 ? stages[stages.length - 1].endDate?.split('T')[0] : '';
+  const defaultStageStartDate = lastStageEnd || object?.startDate?.split('T')[0] || '';
+
   const handleEditStage = (stage: Stage) => {
     setEditingStage(stage);
     setIsStageDialogOpen(true);
@@ -1108,6 +1111,8 @@ export default function ObjectDetailPage() {
         onSuccess={loadData}
         objectStartDate={object?.startDate}
         objectEndDate={object?.endDate}
+        defaultStartDate={editingStage ? undefined : defaultStageStartDate}
+        existingStages={stages}
       />
 
       {/* Диалог редактирования объекта */}

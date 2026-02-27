@@ -60,6 +60,8 @@ interface StageFormDialogProps {
   onSuccess: () => void;
   objectStartDate?: string;
   objectEndDate?: string;
+  defaultStartDate?: string;
+  existingStages?: Stage[];
 }
 
 export function StageFormDialog({
@@ -70,6 +72,8 @@ export function StageFormDialog({
   onSuccess,
   objectStartDate,
   objectEndDate,
+  defaultStartDate,
+  existingStages,
 }: StageFormDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -122,13 +126,13 @@ export function StageFormDialog({
 
       reset({
         name: stage?.name || '',
-        startDate: stage?.startDate?.split('T')[0] || '',
+        startDate: stage?.startDate?.split('T')[0] || defaultStartDate || '',
         endDate: stage?.endDate?.split('T')[0] || '',
         budget: stage?.budget?.toString() || '',
         plannedPeople: stage?.plannedPeople?.toString() || '',
       });
     }
-  }, [open, stage, reset]);
+  }, [open, stage, reset, defaultStartDate]);
 
   const addEquipment = () => {
     if (equipmentTypes.length > 0) {
@@ -254,7 +258,7 @@ export function StageFormDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form id="stage-form" onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 pr-2">
+        <form id="stage-form" onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 pr-2 p-px">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Левая колонка: основные данные */}
             <div className="space-y-4">
@@ -331,6 +335,20 @@ export function StageFormDialog({
                 {errors.endDate && (
                   <p className="text-sm text-red-500">{errors.endDate.message}</p>
                 )}
+                {(() => {
+                  const currentStart = watch('startDate');
+                  const currentEnd = watch('endDate');
+                  const hasOverlap = existingStages?.some((s) => {
+                    if (stage?.id === s.id) return false;
+                    if (!s.startDate || !s.endDate || !currentStart || !currentEnd) return false;
+                    const sStart = s.startDate.split('T')[0];
+                    const sEnd = s.endDate.split('T')[0];
+                    return currentStart < sEnd && sStart < currentEnd;
+                  }) ?? false;
+                  return hasOverlap ? (
+                    <p className="text-xs text-amber-600">Обнаружено пересечение этапов</p>
+                  ) : null;
+                })()}
               </div>
 
               {/* Extension fields */}
