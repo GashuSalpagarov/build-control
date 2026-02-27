@@ -13,11 +13,11 @@ export class IsEndDateAfterStartDateConstraint
   validate(endDate: string, args: ValidationArguments) {
     const startDate = (args.object as any)[args.constraints[0]];
     if (!startDate || !endDate) return true;
-    return new Date(endDate) > new Date(startDate);
+    return new Date(endDate) >= new Date(startDate);
   }
 
   defaultMessage() {
-    return 'Дата окончания должна быть позже даты начала';
+    return 'Дата окончания должна быть не раньше даты начала';
   }
 }
 

@@ -36,12 +36,12 @@ const objectSchema = z.object({
 }).refine(
   (data) => {
     if (data.startDate && data.endDate) {
-      return data.endDate > data.startDate;
+      return data.endDate >= data.startDate;
     }
     return true;
   },
   {
-    message: 'Дата окончания должна быть позже даты начала',
+    message: 'Дата окончания должна быть не раньше даты начала',
     path: ['endDate'],
   }
 );

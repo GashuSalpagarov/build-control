@@ -26,11 +26,11 @@ const extendSchema = z.object({
 }).refine(
   (data) => {
     if (data.newStartDate && data.newEndDate) {
-      return data.newEndDate > data.newStartDate;
+      return data.newEndDate >= data.newStartDate;
     }
     return true;
   },
-  { message: 'Дата окончания должна быть позже даты начала', path: ['newEndDate'] }
+  { message: 'Дата окончания должна быть не раньше даты начала', path: ['newEndDate'] }
 );
 
 type ExtendFormData = z.infer<typeof extendSchema>;

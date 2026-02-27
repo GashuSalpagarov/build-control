@@ -193,10 +193,17 @@ function WizardStageDialog({
   }, [open, stage, defaultStartDate, objectData.endDate]);
 
   const updateLocal = (field: string, value: any) => {
-    setLocalData((prev) => ({ ...prev, [field]: value }));
-    if (field === 'startDate' || field === 'endDate') {
-      setDateError('');
-    }
+    setLocalData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'startDate' || field === 'endDate') {
+        if (next.startDate && next.endDate && next.endDate < next.startDate) {
+          setDateError('Дата окончания должна быть не раньше даты начала');
+        } else {
+          setDateError('');
+        }
+      }
+      return next;
+    });
   };
 
   const addEquipment = () => {
@@ -239,8 +246,8 @@ function WizardStageDialog({
   const handleSave = () => {
     if (!localData.name.trim()) return;
     if (budgetExceeded) return;
-    if (localData.startDate && localData.endDate && localData.endDate <= localData.startDate) {
-      setDateError('Дата окончания должна быть позже даты начала');
+    if (localData.startDate && localData.endDate && localData.endDate < localData.startDate) {
+      setDateError('Дата окончания должна быть не раньше даты начала');
       return;
     }
     setDateError('');
