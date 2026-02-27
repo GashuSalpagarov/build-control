@@ -31,7 +31,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { objectsApi, stagesApi, volumeChecksApi } from '@/lib/api';
-import { ConstructionObject, Stage, VolumeCheck, VolumeCheckObjectSummary } from '@/lib/types';
+import { ConstructionObject, Stage, VolumeCheck, VolumeCheckObjectSummary, UpdateVolumeCheckDto } from '@/lib/types';
 import { Plus } from 'lucide-react';
 
 function formatDate(dateString: string) {
@@ -52,6 +52,9 @@ export default function TechnadzorPage() {
   const [volumeChecks, setVolumeChecks] = useState<VolumeCheck[]>([]);
   const [summary, setSummary] = useState<VolumeCheckObjectSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Редактирование
+  const [editingCheck, setEditingCheck] = useState<VolumeCheck | null>(null);
 
   // Форма проверки
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -137,14 +140,23 @@ export default function TechnadzorPage() {
     setFormError('');
 
     try {
-      await volumeChecksApi.create({
-        stageId: formData.stageId,
-        date: formData.date,
-        percent,
-        comment: formData.comment || undefined,
-      });
+      if (editingCheck) {
+        await volumeChecksApi.update(editingCheck.id, {
+          date: formData.date,
+          percent,
+          comment: formData.comment || undefined,
+        });
+      } else {
+        await volumeChecksApi.create({
+          stageId: formData.stageId,
+          date: formData.date,
+          percent,
+          comment: formData.comment || undefined,
+        });
+      }
 
       setIsFormOpen(false);
+      setEditingCheck(null);
       setFormData({
         stageId: '',
         date: new Date().toISOString().split('T')[0],
@@ -157,6 +169,18 @@ export default function TechnadzorPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditCheck = (check: VolumeCheck) => {
+    setEditingCheck(check);
+    setFormData({
+      stageId: check.stageId,
+      date: new Date(check.date).toISOString().split('T')[0],
+      percent: String(check.percent),
+      comment: check.comment || '',
+    });
+    setFormError('');
+    setIsFormOpen(true);
   };
 
   // Получить текущий процент по этапу
@@ -354,7 +378,7 @@ export default function TechnadzorPage() {
                 volumeChecks.map((check, index) => {
                   const stage = stages.find(s => s.id === check.stageId);
                   return (
-                    <TableRow key={check.id}>
+                    <TableRow key={check.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEditCheck(check)}>
                       <TableCell className="text-sm text-muted-foreground">
                         {index + 1}
                       </TableCell>
@@ -401,10 +425,13 @@ export default function TechnadzorPage() {
       </main>
 
       {/* Форма добавления проверки */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      <Dialog open={isFormOpen} onOpenChange={(open) => {
+        setIsFormOpen(open);
+        if (!open) setEditingCheck(null);
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Добавить проверку объёмов</DialogTitle>
+            <DialogTitle>{editingCheck ? 'Редактировать проверку' : 'Добавить проверку объёмов'}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -413,6 +440,7 @@ export default function TechnadzorPage() {
               <Select
                 value={formData.stageId}
                 onValueChange={(value) => setFormData({ ...formData, stageId: value })}
+                disabled={!!editingCheck}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите этап" />

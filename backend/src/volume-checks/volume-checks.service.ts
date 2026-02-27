@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVolumeCheckDto } from './dto/create-volume-check.dto';
+import { UpdateVolumeCheckDto } from './dto/update-volume-check.dto';
 
 @Injectable()
 export class VolumeChecksService {
@@ -109,6 +110,52 @@ export class VolumeChecksService {
     }
 
     return volumeCheck;
+  }
+
+  async update(id: string, userId: string, tenantId: string, dto: UpdateVolumeCheckDto) {
+    const check = await this.findOne(id, tenantId);
+
+    if (check.userId !== userId) {
+      throw new ForbiddenException('Можно редактировать только свои проверки');
+    }
+
+    // Если меняется percent — проверить, что новый процент >= предыдущей проверки для этого этапа
+    if (dto.percent !== undefined) {
+      const latestCheck = await this.prisma.volumeCheck.findFirst({
+        where: {
+          stageId: check.stageId,
+          id: { not: id },
+        },
+        orderBy: { date: 'desc' },
+      });
+
+      if (latestCheck && dto.percent < latestCheck.percent) {
+        throw new BadRequestException(
+          `Процент не может быть меньше предыдущего значения (${latestCheck.percent}%)`,
+        );
+      }
+    }
+
+    const updated = await this.prisma.volumeCheck.update({
+      where: { id },
+      data: {
+        ...(dto.date !== undefined && { date: new Date(dto.date) }),
+        ...(dto.percent !== undefined && { percent: dto.percent }),
+        ...(dto.comment !== undefined && { comment: dto.comment }),
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        stage: {
+          select: { id: true, name: true, objectId: true },
+        },
+      },
+    });
+
+    await this.updateObjectProgress(updated.stage.objectId);
+
+    return updated;
   }
 
   // Получить последнюю проверку по этапу

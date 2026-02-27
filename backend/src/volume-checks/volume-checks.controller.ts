@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { VolumeChecksService } from './volume-checks.service';
 import { CreateVolumeCheckDto } from './dto/create-volume-check.dto';
+import { UpdateVolumeCheckDto } from './dto/update-volume-check.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -56,6 +58,17 @@ export class VolumeChecksController {
     @Param('stageId') stageId: string,
   ) {
     return this.volumeChecksService.getLatestByStage(stageId, tenantId);
+  }
+
+  @Patch(':id')
+  @Roles(Role.SUPERADMIN, Role.MINISTER, Role.TECHNADZOR)
+  update(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Body() dto: UpdateVolumeCheckDto,
+  ) {
+    return this.volumeChecksService.update(id, userId, tenantId, dto);
   }
 
   @Get(':id')

@@ -183,6 +183,12 @@ export interface CreateVolumeCheckDto {
   comment?: string;
 }
 
+export interface UpdateVolumeCheckDto {
+  date?: string;
+  percent?: number;
+  comment?: string;
+}
+
 export interface VolumeCheckStageSummary {
   stageId: string;
   stageName: string;

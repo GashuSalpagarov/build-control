@@ -119,7 +119,7 @@ import type {
   ConstructionObject, Stage, EquipmentType, Contractor, PlannedEquipment,
   UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto,
   Payment, CreatePaymentDto, PaymentObjectSummary,
-  VolumeCheck, CreateVolumeCheckDto, VolumeCheckObjectSummary,
+  VolumeCheck, CreateVolumeCheckDto, UpdateVolumeCheckDto, VolumeCheckObjectSummary,
   Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus,
   StageScheduleChange, ExtendStageDto,
 } from './types';
@@ -318,6 +318,10 @@ export const volumeChecksApi = {
 
   // Создать проверку
   create: (data: CreateVolumeCheckDto) => api.post<VolumeCheck>('/volume-checks', data),
+
+  // Обновить проверку
+  update: (id: string, data: UpdateVolumeCheckDto) =>
+    api.patch<VolumeCheck>(`/volume-checks/${id}`, data),
 
   // Сводка по объекту
   getSummaryByObject: (objectId: string) =>
