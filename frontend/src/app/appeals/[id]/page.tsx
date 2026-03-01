@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -19,13 +19,14 @@ import { appealsApi } from '@/lib/api';
 import {
   Appeal,
   AppealMessage,
+  Attachment,
   AppealStatus,
   appealStatusLabels,
   appealStatusColors,
   appealTypeLabels,
   appealTypeColors,
 } from '@/lib/types';
-import { ArrowLeft, Send, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Send, Clock, AlertCircle, CheckCircle, XCircle, Paperclip, Download, Trash2, FileText, Image as ImageIcon } from 'lucide-react';
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -44,6 +45,22 @@ function formatTime(dateString: string) {
   });
 }
 
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} Б`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function getFileIcon(mimeType?: string) {
+  if (mimeType?.startsWith('image/')) return <ImageIcon className="w-5 h-5 text-blue-500" />;
+  if (mimeType === 'application/pdf') return <FileText className="w-5 h-5 text-red-500" />;
+  return <FileText className="w-5 h-5 text-gray-500" />;
+}
+
+const ALLOWED_FILE_TYPES = 'image/*,.pdf,.doc,.docx,.xls,.xlsx';
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 export default function AppealDetailPage() {
   const { id } = useParams();
   const { user, isLoading: authLoading } = useAuth();
@@ -54,6 +71,9 @@ export default function AppealDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAppeal = useCallback(async () => {
     if (!user || !id) return;
@@ -111,6 +131,41 @@ export default function AppealDetailPage() {
     }
   };
 
+  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !appeal) return;
+
+    setUploadError('');
+
+    // Валидация размера на клиенте
+    const oversized = Array.from(files).find((f) => f.size > MAX_FILE_SIZE);
+    if (oversized) {
+      setUploadError(`Файл "${oversized.name}" превышает максимальный размер 10 МБ`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await appealsApi.uploadAttachments(appeal.id, Array.from(files));
+      loadAppeal();
+    } catch (err: any) {
+      setUploadError(err.message || 'Ошибка загрузки файлов');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    try {
+      await appealsApi.deleteAttachment(attachmentId);
+      loadAppeal();
+    } catch (err) {
+      console.error('Error deleting attachment:', err);
+    }
+  };
+
   const getStatusIcon = (status: AppealStatus) => {
     switch (status) {
       case 'NEW':
@@ -139,7 +194,7 @@ export default function AppealDetailPage() {
   if (isLoading) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-4xl mx-auto p-4">
+        <main className="max-w-7xl mx-auto p-4">
           <div className="text-gray-500">Загрузка...</div>
         </main>
       </div>
@@ -149,7 +204,7 @@ export default function AppealDetailPage() {
   if (!appeal) {
     return (
       <div className="flex-1 bg-background">
-        <main className="max-w-4xl mx-auto p-4">
+        <main className="max-w-7xl mx-auto p-4">
           <div className="text-gray-500">Обращение не найдено</div>
         </main>
       </div>
@@ -158,10 +213,13 @@ export default function AppealDetailPage() {
 
   const canChangeStatus = ['MINISTER', 'SUPERADMIN'].includes(user.role);
   const canSendMessage = ['CONTRACTOR', 'TECHNADZOR', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canUploadFiles = ['CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN'].includes(user.role);
+  const canDeleteAttachment = (attachment: Attachment) =>
+    appeal.userId === user.id || ['SUPERADMIN', 'MINISTER'].includes(user.role);
 
   return (
     <div className="flex-1 bg-background">
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="max-w-7xl mx-auto p-4">
         {/* Навигация */}
         <Link
           href="/appeals"
@@ -171,8 +229,11 @@ export default function AppealDetailPage() {
           К списку обращений
         </Link>
 
+        <div className="flex flex-col lg:flex-row gap-4">
+        {/* Левая колонка: информация + вложения */}
+        <div className="lg:w-1/2">
         {/* Заголовок обращения */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -188,20 +249,15 @@ export default function AppealDetailPage() {
                 {appeal.subject}
               </h1>
               {appeal.description && (
-                <p className="text-gray-600 mb-4">{appeal.description}</p>
+                <p className="text-gray-600 mb-2">{appeal.description}</p>
               )}
-              <div className="text-sm text-gray-500">
-                <p>
-                  <span className="font-medium">Объект:</span> {appeal.object.name}
-                  {appeal.stage && <span> • {appeal.stage.name}</span>}
-                </p>
-                <p>
-                  <span className="font-medium">Автор:</span> {appeal.user.name} ({appeal.user.email})
-                </p>
-                <p>
-                  <span className="font-medium">Создано:</span> {formatDate(appeal.createdAt)}
-                </p>
-              </div>
+              <p className="text-sm text-gray-500">
+                {appeal.object.name}{appeal.stage && <span> • {appeal.stage.name}</span>}
+                <span className="mx-2">•</span>
+                {appeal.user.name} ({appeal.user.email})
+                <span className="mx-2">•</span>
+                {formatDate(appeal.createdAt)}
+              </p>
             </div>
 
             {/* Изменение статуса */}
@@ -223,8 +279,109 @@ export default function AppealDetailPage() {
           </div>
         </div>
 
+        {/* Вложения */}
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <Paperclip className="w-4 h-4" />
+              Вложения
+              {appeal.attachments && appeal.attachments.length > 0 && (
+                <span className="text-gray-400">({appeal.attachments.length})</span>
+              )}
+            </h2>
+            {canUploadFiles && (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept={ALLOWED_FILE_TYPES}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  <Paperclip className="w-4 h-4 mr-1" />
+                  {isUploading ? 'Загрузка...' : 'Прикрепить файл'}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {uploadError && (
+            <div className="text-sm text-red-600 mb-3 bg-red-50 rounded-lg px-3 py-2">
+              {uploadError}
+            </div>
+          )}
+
+          {!appeal.attachments || appeal.attachments.length === 0 ? (
+            <p className="text-sm text-gray-400">Нет вложений</p>
+          ) : (
+            <div className="space-y-2">
+              {appeal.attachments.map((attachment) => {
+                const url = appealsApi.getAttachmentUrl(attachment.path);
+                const isImage = attachment.mimeType?.startsWith('image/');
+                return (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50"
+                  >
+                    {isImage ? (
+                      <img
+                        src={url}
+                        alt={attachment.filename}
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      getFileIcon(attachment.mimeType)
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-blue-600 hover:underline truncate block"
+                      >
+                        {attachment.filename}
+                      </a>
+                      <span className="text-xs text-gray-400">
+                        {formatFileSize(attachment.size)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                      {canDeleteAttachment(attachment) && (
+                        <button
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        </div>
+
+        {/* Правая колонка: переписка */}
+        <div className="lg:w-1/2">
         {/* Переписка */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700">
             Переписка
           </div>
@@ -270,13 +427,17 @@ export default function AppealDetailPage() {
           {/* Форма отправки */}
           {canSendMessage && (
             <div className="p-4 border-t bg-gray-50">
-              <div className="flex gap-2">
+              <div className="flex items-end gap-2">
                 <Textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
                   placeholder="Введите сообщение..."
-                  rows={2}
-                  className="flex-1 resize-none"
+                  rows={1}
+                  className="flex-1 resize-none min-h-0 overflow-hidden"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -287,7 +448,6 @@ export default function AppealDetailPage() {
                 <Button
                   onClick={handleSendMessage}
                   disabled={isSending || !newMessage.trim()}
-                  className="self-end"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -297,6 +457,8 @@ export default function AppealDetailPage() {
               </p>
             </div>
           )}
+        </div>
+        </div>
         </div>
       </main>
     </div>

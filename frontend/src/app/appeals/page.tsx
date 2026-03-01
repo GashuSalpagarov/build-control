@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { usePageHeader } from '@/hooks/use-page-header';
@@ -42,7 +42,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle, Paperclip, X } from 'lucide-react';
 
 function formatDate(dateString: string) {
   const d = new Date(dateString);
@@ -78,6 +78,8 @@ export default function AppealsPage() {
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const formFileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -137,13 +139,17 @@ export default function AppealsPage() {
     setFormError('');
 
     try {
-      await appealsApi.create({
+      const created = await appealsApi.create({
         objectId: formData.objectId,
         stageId: formData.stageId || undefined,
         type: formData.type,
         subject: formData.subject,
         description: formData.description || undefined,
       });
+
+      if (selectedFiles.length > 0) {
+        await appealsApi.uploadAttachments(created.id, selectedFiles);
+      }
 
       setIsFormOpen(false);
       setFormData({
@@ -153,6 +159,7 @@ export default function AppealsPage() {
         subject: '',
         description: '',
       });
+      setSelectedFiles([]);
       loadData();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Ошибка сохранения');
@@ -411,6 +418,49 @@ export default function AppealsPage() {
                 placeholder="Подробное описание вопроса или проблемы..."
                 rows={4}
               />
+            </div>
+
+            <div className="space-y-2">
+              <input
+                ref={formFileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  const files = e.target.files;
+                  if (files) {
+                    setSelectedFiles((prev) => [...prev, ...Array.from(files)]);
+                  }
+                  if (formFileInputRef.current) formFileInputRef.current.value = '';
+                }}
+                className="hidden"
+              />
+              {selectedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 text-sm bg-gray-100 rounded-full pl-3 pr-1.5 py-1">
+                      <Paperclip className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="truncate max-w-[200px]">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                        className="p-0.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-200"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => formFileInputRef.current?.click()}
+              >
+                <Paperclip className="w-4 h-4 mr-1" />
+                Прикрепить файл
+              </Button>
             </div>
 
             {formError && (
