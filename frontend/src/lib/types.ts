@@ -282,6 +282,17 @@ export const roleLabels: Record<Role, string> = {
   CONTRACTOR: 'Подрядчик',
 };
 
+// Вложения
+export interface Attachment {
+  id: string;
+  appealId?: string;
+  path: string;
+  filename: string;
+  mimeType?: string;
+  size?: number;
+  createdAt: string;
+}
+
 // Обращения
 export type AppealStatus = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
 export type AppealType = 'QUESTION' | 'PROBLEM' | 'SUGGESTION';
@@ -324,6 +335,7 @@ export interface Appeal {
     email: string;
   };
   messages?: AppealMessage[];
+  attachments?: Attachment[];
   _count?: {
     messages: number;
   };

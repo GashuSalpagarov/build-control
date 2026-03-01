@@ -23,6 +23,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { objectsApi, stagesApi, paymentsApi } from '@/lib/api';
 import { ConstructionObject, Stage, Payment, PaymentObjectSummary } from '@/lib/types';
 import {
@@ -33,7 +39,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 
 function formatDate(dateString: string) {
@@ -49,11 +55,12 @@ export default function AccountantPage() {
   const router = useRouter();
 
   const [objects, setObjects] = useState<ConstructionObject[]>([]);
-  const [selectedObjectId, setSelectedObjectId] = useState<string>('__none__');
+  const [selectedObject, setSelectedObject] = useState<ConstructionObject | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<PaymentObjectSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Форма платежа
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -68,24 +75,20 @@ export default function AccountantPage() {
 
   // Загрузка объектов
   const loadObjects = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await objectsApi.getAll();
       setObjects(data);
     } catch (err) {
       console.error('Error loading objects:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   // Загрузка данных при выборе объекта
   const loadObjectData = useCallback(async (objectId: string) => {
-    if (objectId === '__none__') {
-      setStages([]);
-      setPayments([]);
-      setSummary(null);
-      return;
-    }
-
-    setIsLoading(true);
+    setIsLoadingData(true);
     try {
       const [stagesData, paymentsData, summaryData] = await Promise.all([
         stagesApi.getByObject(objectId),
@@ -98,7 +101,7 @@ export default function AccountantPage() {
     } catch (err) {
       console.error('Error loading object data:', err);
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
   }, []);
 
@@ -119,9 +122,26 @@ export default function AccountantPage() {
     }
   }, [user, authLoading, router, loadObjects]);
 
+  // При выборе объекта — загрузить данные
   useEffect(() => {
-    loadObjectData(selectedObjectId);
-  }, [selectedObjectId, loadObjectData]);
+    if (selectedObject) {
+      loadObjectData(selectedObject.id);
+    }
+  }, [selectedObject, loadObjectData]);
+
+  const handleSelectObject = (obj: ConstructionObject) => {
+    setSelectedObject(obj);
+    setStages([]);
+    setPayments([]);
+    setSummary(null);
+  };
+
+  const handleBack = () => {
+    setSelectedObject(null);
+    setStages([]);
+    setPayments([]);
+    setSummary(null);
+  };
 
   const handleSubmit = async () => {
     if (!formData.stageId || !formData.amount) {
@@ -147,7 +167,9 @@ export default function AccountantPage() {
         amount: '',
         comment: '',
       });
-      loadObjectData(selectedObjectId);
+      if (selectedObject) {
+        loadObjectData(selectedObject.id);
+      }
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Ошибка сохранения');
     } finally {
@@ -165,18 +187,19 @@ export default function AccountantPage() {
     ? parseFloat(formData.amount) > getStageRemaining(formData.stageId)
     : false;
 
-  const headerAction = useMemo(() => (
-    <Button
-      onClick={() => setIsFormOpen(true)}
-      disabled={selectedObjectId === '__none__'}
-    >
-      <Plus className="w-4 h-4 mr-2" />
-      Добавить платёж
-    </Button>
-  ), [selectedObjectId]);
+  // Page header
+  const headerAction = useMemo(() => {
+    if (!selectedObject) return undefined;
+    return (
+      <Button onClick={() => setIsFormOpen(true)}>
+        <Plus className="w-4 h-4 mr-2" />
+        Добавить платёж
+      </Button>
+    );
+  }, [selectedObject]);
 
   usePageHeader({
-    title: 'Платежи',
+    title: selectedObject ? selectedObject.name : 'Платежи',
     action: headerAction,
   });
 
@@ -188,25 +211,59 @@ export default function AccountantPage() {
     );
   }
 
+  // --- Режим 1: Список объектов ---
+  if (!selectedObject) {
+    return (
+      <div className="flex-1 bg-background">
+        <main className="max-w-7xl mx-auto p-4">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader>
+                    <div className="h-5 w-3/4 bg-muted rounded" />
+                    <div className="h-4 w-1/2 bg-muted rounded mt-2" />
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          ) : objects.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-lg">Объекты не найдены</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {objects.map((obj) => (
+                <Card
+                  key={obj.id}
+                  className="cursor-pointer transition-shadow hover:shadow-md"
+                  onClick={() => handleSelectObject(obj)}
+                >
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base leading-tight">{obj.name}</CardTitle>
+                    {obj.address && (
+                      <CardDescription className="mt-1">{obj.address}</CardDescription>
+                    )}
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  // --- Режим 2: Этапы и платежи выбранного объекта ---
   return (
     <div className="flex-1 bg-background">
       <main className="max-w-7xl mx-auto p-4">
-        {/* Выбор объекта */}
-        <div className="mb-6 w-full max-w-md">
-          <Label className="mb-1.5 block">Выберите объект</Label>
-          <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Выберите объект" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Не выбран</SelectItem>
-              {objects.map((obj) => (
-                <SelectItem key={obj.id} value={obj.id}>
-                  {obj.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Навигация назад */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="sm" onClick={handleBack}>
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Назад
+          </Button>
         </div>
 
         {/* Сводка */}
@@ -268,7 +325,18 @@ export default function AccountantPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {summary && summary.stages.length > 0 ? (
+                {isLoadingData ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell><div className="h-4 w-32 bg-muted rounded" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-muted rounded ml-auto" /></TableCell>
+                      <TableCell><div className="h-4 w-8 bg-muted rounded mx-auto" /></TableCell>
+                      <TableCell><div className="h-4 w-10 bg-muted rounded mx-auto" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : summary && summary.stages.length > 0 ? (
                   summary.stages.map((stage) => (
                     <TableRow key={stage.stageId}>
                       <TableCell>
@@ -304,7 +372,7 @@ export default function AccountantPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      {selectedObjectId === '__none__' ? 'Выберите объект' : 'Этапов нет'}
+                      Этапов нет
                     </TableCell>
                   </TableRow>
                 )}
@@ -328,7 +396,7 @@ export default function AccountantPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {isLoadingData ? (
                 <>
                   {[1, 2, 3].map((i) => (
                     <TableRow key={i} className="animate-pulse">
@@ -344,7 +412,7 @@ export default function AccountantPage() {
               ) : payments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    {selectedObjectId === '__none__' ? 'Выберите объект' : 'Платежей нет'}
+                    Платежей нет
                   </TableCell>
                 </TableRow>
               ) : (

@@ -45,7 +45,7 @@ export class ObjectsService {
     // SUPERADMIN видит все объекты
     if (userRole === Role.SUPERADMIN) {
       whereClause = {};
-    } else if (userRole === Role.CONTRACTOR) {
+    } else if (userRole === Role.CONTRACTOR || userRole === Role.INSPECTOR) {
       // Подрядчик видит только свои объекты
       const assignments = await this.prisma.userObjectAssignment.findMany({
         where: { userId },

@@ -120,7 +120,7 @@ import type {
   UserWithAssignments, ResourceCheck, CreateResourceCheckDto, UpdateResourceCheckDto,
   Payment, CreatePaymentDto, PaymentObjectSummary,
   VolumeCheck, CreateVolumeCheckDto, UpdateVolumeCheckDto, VolumeCheckObjectSummary,
-  Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus,
+  Appeal, AppealMessage, CreateAppealDto, AppealStats, AppealStatus, Attachment,
   StageScheduleChange, ExtendStageDto,
 } from './types';
 
@@ -364,4 +364,34 @@ export const appealsApi = {
 
   // Статистика
   getStats: () => api.get<AppealStats>('/appeals/stats'),
+
+  // Загрузить вложения
+  uploadAttachments: async (appealId: string, files: File[]): Promise<Attachment[]> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+
+    const token = api.getToken();
+    const response = await fetch(`${API_URL}/appeals/${appealId}/attachments`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Ошибка загрузки файлов');
+    }
+
+    return response.json();
+  },
+
+  // Удалить вложение
+  deleteAttachment: (attachmentId: string) =>
+    api.delete(`/appeals/attachments/${attachmentId}`),
+
+  // Получить URL для скачивания
+  getAttachmentUrl: (path: string): string => {
+    const baseUrl = API_URL.replace('/api', '');
+    return `${baseUrl}/uploads/${path}`;
+  },
 };

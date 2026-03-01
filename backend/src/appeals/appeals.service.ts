@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppealDto } from './dto/create-appeal.dto';
 import { UpdateAppealDto, AddMessageDto } from './dto/update-appeal.dto';
-import { AppealStatus } from '@prisma/client';
+import { AppealStatus, Attachment } from '@prisma/client';
+import { FILE_STORAGE } from '../file-storage/file-storage.interface';
+import type { IFileStorage } from '../file-storage/file-storage.interface';
 
 @Injectable()
 export class AppealsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(FILE_STORAGE) private fileStorage: IFileStorage,
+  ) {}
 
   async create(dto: CreateAppealDto, userId: string, tenantId: string) {
     // Проверяем, что объект принадлежит tenant
@@ -49,6 +54,7 @@ export class AppealsService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        attachments: true,
         _count: { select: { messages: true } },
       },
     });
@@ -100,6 +106,7 @@ export class AppealsService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        attachments: true,
         _count: { select: { messages: true } },
       },
     });
@@ -199,6 +206,73 @@ export class AppealsService {
       },
       orderBy: { createdAt: 'asc' },
     });
+  }
+
+  async uploadAttachments(
+    appealId: string,
+    files: Express.Multer.File[],
+    userId: string,
+    tenantId: string,
+  ) {
+    // Проверяем что обращение существует и принадлежит tenant
+    await this.findOne(appealId, tenantId);
+
+    const attachments: Attachment[] = [];
+    for (const file of files) {
+      const fileInfo = await this.fileStorage.save(file, 'appeals');
+      const attachment = await this.prisma.attachment.create({
+        data: {
+          appealId,
+          path: fileInfo.path,
+          filename: fileInfo.filename,
+          mimeType: fileInfo.mimeType,
+          size: fileInfo.size,
+        },
+      });
+      attachments.push(attachment);
+    }
+
+    return attachments;
+  }
+
+  async deleteAttachment(
+    attachmentId: string,
+    userId: string,
+    userRole: string,
+    tenantId: string,
+  ) {
+    const attachment = await this.prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: {
+        appeal: {
+          include: {
+            object: { select: { tenantId: true } },
+          },
+        },
+      },
+    });
+
+    if (!attachment || !attachment.appeal) {
+      throw new NotFoundException('Вложение не найдено');
+    }
+
+    // Проверяем tenant
+    if (attachment.appeal.object.tenantId !== tenantId) {
+      throw new NotFoundException('Вложение не найдено');
+    }
+
+    // Проверяем авторство — удалять может только автор обращения или SUPERADMIN/MINISTER
+    if (
+      attachment.appeal.userId !== userId &&
+      !['SUPERADMIN', 'MINISTER'].includes(userRole)
+    ) {
+      throw new ForbiddenException('Вы можете удалять только свои вложения');
+    }
+
+    await this.fileStorage.delete(attachment.path);
+    await this.prisma.attachment.delete({ where: { id: attachmentId } });
+
+    return { success: true };
   }
 
   async getStats(tenantId: string) {

@@ -3,12 +3,19 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
   Request,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { AppealsService } from './appeals.service';
 import { CreateAppealDto } from './dto/create-appeal.dto';
 import { UpdateAppealDto, AddMessageDto } from './dto/update-appeal.dto';
@@ -55,6 +62,20 @@ export class AppealsController {
     return this.appealsService.getStats(req.user.tenantId);
   }
 
+  @Delete('attachments/:attachmentId')
+  @Roles('CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN')
+  deleteAttachment(
+    @Param('attachmentId') attachmentId: string,
+    @Request() req,
+  ) {
+    return this.appealsService.deleteAttachment(
+      attachmentId,
+      req.user.id,
+      req.user.role,
+      req.user.tenantId,
+    );
+  }
+
   @Get(':id')
   @Roles('CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN')
   findOne(@Param('id') id: string, @Request() req) {
@@ -85,5 +106,32 @@ export class AppealsController {
   @Roles('CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN')
   getMessages(@Param('id') appealId: string, @Request() req) {
     return this.appealsService.getMessages(appealId, req.user.tenantId);
+  }
+
+  @Post(':id/attachments')
+  @Roles('CONTRACTOR', 'INSPECTOR', 'TECHNADZOR', 'ACCOUNTANT', 'MINISTER', 'SUPERADMIN')
+  @UseInterceptors(FilesInterceptor('files', 10, { limits: { fileSize: 10 * 1024 * 1024 } }))
+  uploadAttachments(
+    @Param('id') appealId: string,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
+          new FileTypeValidator({
+            fileType: /(image\/(jpeg|png|gif|webp|svg\+xml)|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet)/,
+          }),
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    files: Express.Multer.File[],
+    @Request() req,
+  ) {
+    return this.appealsService.uploadAttachments(
+      appealId,
+      files,
+      req.user.id,
+      req.user.tenantId,
+    );
   }
 }
