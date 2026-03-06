@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { appealsApi } from '@/lib/api';
 import {
   Sidebar,
   SidebarContent,
@@ -57,6 +59,31 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [rawNewCount, setRawNewCount] = useState(0);
+  const [seenCount, setSeenCount] = useState(0);
+
+  useEffect(() => {
+    setSeenCount(Number(localStorage.getItem('appeals_seen_count') ?? '0'));
+  }, []);
+
+  useEffect(() => {
+    if (!user || !['CONTRACTOR', 'TECHNADZOR', 'MINISTER', 'GOVERNMENT', 'SUPERADMIN'].includes(user.role)) return;
+    const fetchStats = () => {
+      appealsApi.getStats().then(stats => setRawNewCount(stats.new)).catch(() => {});
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 60_000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  useEffect(() => {
+    if (pathname === '/appeals') {
+      setSeenCount(rawNewCount);
+      localStorage.setItem('appeals_seen_count', String(rawNewCount));
+    }
+  }, [pathname, rawNewCount]);
+
+  const appealCount = Math.max(0, rawNewCount - seenCount);
 
   if (!user) return null;
 
@@ -125,6 +152,11 @@ export function AppSidebar() {
                       <Link href={item.href}>
                         <Icon />
                         <span>{item.label}</span>
+                        {item.href === '/appeals' && appealCount > 0 && (
+                          <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[11px] font-semibold text-white group-data-[collapsible=icon]:hidden">
+                            {appealCount > 99 ? '99+' : appealCount}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

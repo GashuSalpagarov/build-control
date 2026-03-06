@@ -105,6 +105,11 @@ export default function ObjectsPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
+      return;
+    }
+    if (user && user.role === 'INSPECTOR') {
+      router.push('/inspector');
+      return;
     }
   }, [user, authLoading, router]);
 
