@@ -59,7 +59,7 @@ async function main() {
   const minister = await prisma.user.create({
     data: {
       email: 'minister@kchr.ru',
-      name: 'Эркенов Рашид Хусеинович',
+      name: 'Министр',
       passwordHash: await hash('minister123'),
       role: Role.MINISTER,
       tenantId: tenant.id,
