@@ -248,7 +248,7 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Редактировать проверку' : 'Ежедневная проверка'}
@@ -263,7 +263,8 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
           </p>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 gap-4">
+          <div className="overflow-y-auto space-y-4 px-1">
           {/* Дата и время */}
           <div className="space-y-2">
             <Label>Дата и время проверки</Label>
@@ -430,11 +431,13 @@ export function ResourceCheckFormDialog(props: ResourceCheckFormDialogProps) {
             )}
           </div>
 
+          </div>
+
           {error && (
             <div className="text-sm text-red-500 text-center">{error}</div>
           )}
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
