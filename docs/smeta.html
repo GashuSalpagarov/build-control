@@ -3,15 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Коммерческое предложение — Система контроля строительства</title>
+    <title>Смета — Система контроля строительства</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        :root {
+            --navy: #0f172a;
+            --navy-light: #1e293b;
+            --blue: #3b82f6;
+            --blue-dark: #2563eb;
+            --blue-light: #dbeafe;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--slate-100);
+            color: var(--slate-800);
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
         .page {
@@ -19,295 +47,568 @@
             margin: 0 auto;
             background: white;
             min-height: 100vh;
+            box-shadow: var(--shadow-xl);
         }
 
-        /* Header */
+        /* ===== HEADER ===== */
         .header {
-            background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+            background: linear-gradient(135deg, #1a365d 0%, #2563eb 100%);
             color: white;
-            padding: 48px 60px;
+            padding: 64px 60px 56px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .header-top {
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -15%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .header p {
+            font-size: 17px;
+            color: rgba(255,255,255,0.75);
+            font-weight: 400;
+            position: relative;
+        }
+
+        /* ===== CONTENT ===== */
+        .content { padding: 56px 60px; }
+
+        /* ===== BAR CHART ===== */
+        .bar-chart { margin-bottom: 48px; }
+
+        .bar-chart h2 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+
+        .bar-row {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 16px;
         }
 
-        .header-logo {
+        .bar-label {
+            width: 220px;
             font-size: 13px;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-weight: 500;
+            color: var(--slate-600);
+            text-align: right;
+            flex-shrink: 0;
         }
 
-        .header-date { font-size: 14px; opacity: 0.7; }
-
-        .header h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
-        .header p { font-size: 17px; opacity: 0.85; }
-
-        .header-amount {
-            margin-top: 28px;
-            display: inline-block;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 12px;
-            padding: 16px 28px;
+        .bar-track {
+            flex: 1;
+            height: 36px;
+            background: var(--slate-100);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .header-amount .label {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.8;
+        .bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .header-amount .value { font-size: 32px; font-weight: 700; }
-        .header-amount .period { font-size: 15px; opacity: 0.7; margin-left: 4px; }
+        .bar-fill.c1 { background: linear-gradient(135deg, #0f172a, #334155); }
+        .bar-fill.c2 { background: linear-gradient(135deg, #1d4ed8, #3b82f6); }
+        .bar-fill.c3 { background: linear-gradient(135deg, #0369a1, #0ea5e9); }
+        .bar-fill.c4 { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+        .bar-fill.c5 { background: linear-gradient(135deg, #059669, #34d399); }
 
-        /* Content */
-        .content { padding: 48px 60px; }
-
-        /* Summary cards */
+        /* ===== SUMMARY CARDS ===== */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 16px;
-            margin-bottom: 48px;
+            margin-bottom: 56px;
         }
 
         .summary-card {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 20px;
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius);
+            padding: 24px;
             text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s, transform 0.2s;
         }
 
-        .summary-card .card-value { font-size: 24px; font-weight: 700; color: #1a365d; }
-        .summary-card .card-label { font-size: 13px; color: #718096; margin-top: 4px; }
+        .summary-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
 
-        /* Sections */
-        .section { margin-bottom: 40px; }
+        .summary-card .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.5px;
+        }
+
+        .summary-card .card-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--slate-500);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== SECTIONS ===== */
+        .section {
+            margin-bottom: 48px;
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
 
         .section-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e2e8f0;
+            padding: 20px 24px;
+            background: var(--slate-50);
+            border-bottom: 1px solid var(--slate-200);
+            gap: 14px;
         }
 
         .section-header h2 {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            color: #1a365d;
+            color: var(--navy);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .section-num {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: #2b6cb0;
+            width: 32px;
+            height: 32px;
+            background: var(--blue);
             color: white;
-            border-radius: 50%;
+            border-radius: 8px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
-        .section-total { font-size: 18px; font-weight: 700; color: #2b6cb0; }
-        .section-percent { font-size: 13px; color: #718096; font-weight: 400; margin-left: 8px; }
-
-        /* Tables */
+        /* ===== TABLES ===== */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
         thead th {
-            background: #f7fafc;
-            color: #4a5568;
+            background: white;
+            color: var(--slate-500);
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 10px 14px;
+            letter-spacing: 0.8px;
+            padding: 12px 20px;
             text-align: left;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 1px solid var(--slate-200);
         }
 
         thead th.num { text-align: right; }
 
         tbody td {
-            padding: 12px 14px;
-            border-bottom: 1px solid #edf2f7;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--slate-100);
             vertical-align: top;
         }
+
+        tbody tr:last-child td { border-bottom: none; }
 
         tbody td.num {
             text-align: right;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
+            font-weight: 600;
+            color: var(--slate-700);
         }
 
-        tbody td.name { font-weight: 500; }
-        tbody td.desc { color: #718096; font-size: 13px; }
-        tbody tr:hover { background: #f7fafc; }
+        tbody td.name {
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        tbody td.desc {
+            color: var(--slate-500);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        tbody tr:hover { background: var(--slate-50); }
 
         .section-note {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            background: var(--blue-light);
+            border-top: 1px solid var(--slate-200);
             padding: 16px 20px;
-            margin-top: 16px;
             font-size: 13px;
-            color: #4a5568;
+            color: var(--slate-600);
+            line-height: 1.5;
         }
 
-        .section-note strong { color: #2d3748; }
+        .section-note strong { color: var(--navy); }
 
-        /* Grand total */
+        /* ===== VARIANT TABS ===== */
+        .variant-section {
+            margin-bottom: 48px;
+        }
+
+        .variant-section > .section-header {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius) var(--radius) 0 0;
+            border-bottom: 1px solid var(--slate-200);
+        }
+
+        .variant-tabs {
+            display: flex;
+            gap: 0;
+        }
+
+        .variant-tab {
+            flex: 1;
+            padding: 18px 24px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid var(--slate-200);
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+            background: var(--slate-50);
+            color: var(--slate-500);
+            transition: all 0.2s;
+            user-select: none;
+            position: relative;
+        }
+
+        .variant-tab:hover {
+            background: var(--slate-100);
+            color: var(--slate-700);
+        }
+
+        .variant-tab.active {
+            background: white;
+            color: var(--blue-dark);
+            border-color: var(--blue);
+        }
+
+        .variant-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: white;
+        }
+
+        .variant-tab small {
+            display: block;
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--slate-400);
+            margin-top: 4px;
+        }
+
+        .variant-tab.active small { color: var(--slate-500); }
+
+        .variant-content {
+            border: 2px solid var(--blue);
+            border-radius: 0 0 var(--radius) var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .variant-panel { display: none; }
+        .variant-panel.active { display: block; }
+
+        /* ===== GRAND TOTAL ===== */
         .grand-total {
-            background: #1a365d;
-            color: white;
-            border-radius: 12px;
-            padding: 32px 36px;
-            margin: 48px 0;
+            background: linear-gradient(135deg, #1a365d 0%, #2563eb 100%);
+            border-radius: 16px;
+            padding: 40px 40px;
+            margin: 56px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grand-total::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -15%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .grand-total h2 {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 600;
-            opacity: 0.8;
-            margin-bottom: 20px;
+            color: white;
+            margin-bottom: 24px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            position: relative;
         }
 
-        .grand-total-rows { max-width: 600px; }
+        .grand-total-rows {
+            position: relative;
+        }
 
         .gt-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
         .gt-row:last-child { border-bottom: none; }
-        .gt-row .gt-label { font-size: 14px; opacity: 0.8; }
-        .gt-row .gt-value { font-size: 15px; font-weight: 600; }
-        .gt-row .gt-percent { font-size: 12px; opacity: 0.5; margin-left: 8px; }
+
+        .gt-row .gt-label {
+            font-size: 14px;
+            color: white;
+            font-weight: 400;
+        }
+
+        .gt-row .gt-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .gt-row .gt-percent {
+            font-size: 11px;
+            color: white;
+            margin-left: 8px;
+            font-weight: 500;
+        }
 
         .gt-total-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid rgba(255,255,255,0.3);
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid rgba(255,255,255,0.15);
+            position: relative;
         }
 
-        .gt-total-row .gt-label { font-size: 18px; font-weight: 700; }
-        .gt-total-row .gt-value { font-size: 28px; font-weight: 700; }
+        .gt-total-row .gt-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-        /* What's included */
-        .included { margin: 48px 0; }
+        .gt-total-row .gt-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -0.5px;
+        }
 
-        .included h2 { font-size: 20px; font-weight: 700; color: #1a365d; margin-bottom: 20px; }
+        /* ===== WHAT'S INCLUDED ===== */
+        .included { margin: 56px 0 32px; }
+
+        .included h2 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
 
         .included-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
         }
 
         .included-item {
             display: flex;
-            gap: 12px;
-            padding: 14px 16px;
-            background: #f7fafc;
-            border-radius: 8px;
-            border-left: 3px solid #2b6cb0;
+            gap: 14px;
+            padding: 16px 18px;
+            background: var(--slate-50);
+            border-radius: 10px;
+            border: 1px solid var(--slate-200);
+            transition: box-shadow 0.2s, transform 0.2s;
         }
 
-        .included-icon { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
-
-        .included-text { font-size: 14px; color: #4a5568; }
-        .included-text strong { color: #1a365d; display: block; margin-bottom: 2px; }
-
-        /* Bar chart */
-        .bar-chart { margin: 48px 0; }
-        .bar-chart h2 { font-size: 20px; font-weight: 700; color: #1a365d; margin-bottom: 24px; }
-
-        .bar-row { display: flex; align-items: center; margin-bottom: 12px; gap: 16px; }
-
-        .bar-label { width: 240px; font-size: 13px; color: #4a5568; text-align: right; flex-shrink: 0; }
-
-        .bar-track {
-            flex: 1;
-            height: 32px;
-            background: #edf2f7;
-            border-radius: 6px;
-            overflow: hidden;
+        .included-item:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-1px);
         }
 
-        .bar-fill {
-            height: 100%;
-            border-radius: 6px;
+        .included-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            padding-right: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
+            justify-content: center;
+            background: var(--blue-light);
+            border-radius: 8px;
         }
 
-        .bar-fill.c1 { background: linear-gradient(90deg, #2c7a7b, #38b2ac); }
-        .bar-fill.c2 { background: linear-gradient(90deg, #2b6cb0, #3182ce); }
-        .bar-fill.c3 { background: linear-gradient(90deg, #c05621, #dd6b20); }
-        .bar-fill.c4 { background: linear-gradient(90deg, #9b2c2c, #e53e3e); }
-        .bar-fill.c5 { background: linear-gradient(90deg, #2f855a, #48bb78); }
+        .included-text { font-size: 13px; color: var(--slate-600); line-height: 1.4; }
+        .included-text strong {
+            color: var(--navy);
+            display: block;
+            margin-bottom: 2px;
+            font-size: 14px;
+            font-weight: 600;
+        }
 
-        .bar-amount { width: 120px; font-size: 14px; font-weight: 600; color: #2d3748; flex-shrink: 0; }
+        /* ===== MODEL SWITCHER ===== */
+        .model-switcher {
+            display: flex;
+            margin-top: 36px;
+            margin-left: -60px;
+            margin-right: -60px;
+            margin-bottom: -56px;
+            position: relative;
+        }
 
-        /* Footer */
+        .model-switcher-inner {
+            display: flex;
+            width: 100%;
+        }
+
+        .model-tab {
+            flex: 1;
+            padding: 18px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            text-align: center;
+            background: transparent;
+
+        }
+
+        .model-tab:first-child {
+            border-right: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .model-tab:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .model-tab.active {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .model-tab small {
+            display: block;
+            font-weight: 500;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .model-tab.active small { opacity: 0.8; }
+
+        .model-panel { display: none; }
+        .model-panel.active { display: block; }
+
+        /* ===== FOOTER ===== */
         .footer {
-            border-top: 1px solid #e2e8f0;
-            padding: 32px 60px;
-            color: #a0aec0;
-            font-size: 13px;
+            border-top: 1px solid var(--slate-200);
+            padding: 28px 60px;
+            color: var(--slate-400);
+            font-size: 12px;
         }
 
         .footer p { margin-bottom: 4px; }
 
-        /* Print */
+        /* ===== PRINT ===== */
         @media print {
             body { background: white; }
             .page { box-shadow: none; }
-            .bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .header, .grand-total, .section-num, .included-item {
+            .bar-fill, .section-num, .grand-total, .header {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
             .content { padding: 32px 40px; }
             .header { padding: 36px 40px; }
             .footer { padding: 24px 40px; }
+            .variant-panel { display: block !important; }
+            .variant-panel::before {
+                content: attr(data-title);
+                display: block;
+                font-weight: 700;
+                font-size: 15px;
+                color: var(--navy);
+                margin-bottom: 12px;
+            }
+            .section, .summary-card, .included-item { box-shadow: none; }
         }
 
         @media (max-width: 768px) {
-            .header { padding: 32px 24px; }
+            .header { padding: 40px 24px; }
+            .header h1 { font-size: 26px; }
             .content { padding: 32px 24px; }
             .footer { padding: 24px; }
             .summary-grid { grid-template-columns: 1fr; }
             .included-grid { grid-template-columns: 1fr; }
             .bar-label { width: 120px; font-size: 11px; }
-            .header-top { flex-direction: column; gap: 8px; }
+            .variant-tabs { flex-direction: column; }
+            .variant-tab:first-child { border-right: none; border-bottom: 1px solid var(--slate-200); }
+            .grand-total { padding: 32px 24px; }
+            .gt-total-row .gt-value { font-size: 28px; }
         }
     </style>
 </head>
@@ -315,28 +616,61 @@
     <div class="page">
 
         <div class="header">
-            <div class="header-top">
-                <div class="header-logo">Коммерческое предложение</div>
-                <div class="header-date">от 26 марта 2026 г.</div>
-            </div>
             <h1>Система контроля строительных объектов</h1>
             <p>Платформа мониторинга и управления для Министерства строительства</p>
-            <div class="header-amount">
-                <div class="label">Стоимость годовой подписки</div>
-                <div class="value">5 000 000 &#8381;<span class="period"> / год</span></div>
+
+            <div class="model-switcher">
+                <div class="model-switcher-inner">
+                <div class="model-tab active" onclick="switchModel('subscription')">
+                    Годовая подписка
+                    <small>5 000 000 &#8381;/год</small>
+                </div>
+                <div class="model-tab" onclick="switchModel('boxed')">
+                    Коробочное решение
+                    <small>11 000 000 &#8381; разово</small>
+                </div>
+                </div>
             </div>
         </div>
 
         <div class="content">
 
+            <!-- ==================== SUBSCRIPTION MODEL ==================== -->
+            <div class="model-panel active" id="model-subscription">
+
+            <!-- Bar chart -->
+            <div class="bar-chart">
+                <h2>Распределение бюджета</h2>
+                <div class="bar-row">
+                    <div class="bar-label">Лицензия на ПО</div>
+                    <div class="bar-track"><div class="bar-fill c1" style="width: 100%">40%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Инфраструктура / On-premise</div>
+                    <div class="bar-track"><div class="bar-fill c2" style="width: 60%">24%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Техническая поддержка</div>
+                    <div class="bar-track"><div class="bar-fill c3" style="width: 50%">20%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Развитие и доработка</div>
+                    <div class="bar-track"><div class="bar-fill c4" style="width: 20%">8%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Обучение и внедрение</div>
+                    <div class="bar-track"><div class="bar-fill c5" style="width: 20%">8%</div></div>
+                </div>
+            </div>
+
             <div class="summary-grid">
                 <div class="summary-card">
-                    <div class="card-value">7</div>
-                    <div class="card-label">Ролей пользователей</div>
+                    <div class="card-value">5</div>
+                    <div class="card-label">Позиций в смете</div>
                 </div>
                 <div class="summary-card">
-                    <div class="card-value">99.9%</div>
-                    <div class="card-label">Гарантия доступности (SLA)</div>
+                    <div class="card-value">2</div>
+                    <div class="card-label">Варианта размещения</div>
                 </div>
                 <div class="summary-card">
                     <div class="card-value">24/7</div>
@@ -344,118 +678,176 @@
                 </div>
             </div>
 
-            <!-- Bar chart -->
-            <div class="bar-chart">
-                <h2>Распределение бюджета</h2>
-                <div class="bar-row">
-                    <div class="bar-label">Техподдержка и сопровождение</div>
-                    <div class="bar-track"><div class="bar-fill c1" style="width: 100%">40,8%</div></div>
-                    <div class="bar-amount">2 040 000 &#8381;</div>
-                </div>
-                <div class="bar-row">
-                    <div class="bar-label">Серверная инфраструктура</div>
-                    <div class="bar-track"><div class="bar-fill c2" style="width: 52.9%">21,6%</div></div>
-                    <div class="bar-amount">1 080 000 &#8381;</div>
-                </div>
-                <div class="bar-row">
-                    <div class="bar-label">Информационная безопасность</div>
-                    <div class="bar-track"><div class="bar-fill c3" style="width: 41.2%">16,8%</div></div>
-                    <div class="bar-amount">840 000 &#8381;</div>
-                </div>
-                <div class="bar-row">
-                    <div class="bar-label">Обучение и документация</div>
-                    <div class="bar-track"><div class="bar-fill c4" style="width: 33.3%">13,6%</div></div>
-                    <div class="bar-amount">680 000 &#8381;</div>
-                </div>
-                <div class="bar-row">
-                    <div class="bar-label">Лицензии и сервисы</div>
-                    <div class="bar-track"><div class="bar-fill c5" style="width: 17.6%">7,2%</div></div>
-                    <div class="bar-amount">360 000 &#8381;</div>
-                </div>
-            </div>
-
-            <!-- Section 1: Servers -->
+            <!-- Section 1: License -->
             <div class="section">
                 <div class="section-header">
-                    <h2><span class="section-num">1</span> Серверная инфраструктура и хостинг</h2>
-                    <div class="section-total">1 080 000 &#8381;<span class="section-percent">21,6%</span></div>
+                    <h2><span class="section-num">1</span> Лицензия на программное обеспечение</h2>
                 </div>
                 <table>
                     <thead>
                         <tr>
                             <th>Позиция</th>
-                            <th>Характеристики / обоснование</th>
-                            <th class="num">Руб./мес</th>
+                            <th>Обоснование</th>
                             <th class="num">Руб./год</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="name">Облачный сервер приложений (production)</td>
-                            <td class="desc">8 vCPU, 32 GB RAM, 200 GB SSD. Размещение: Yandex Cloud / Selectel, ЦОД уровня Tier III, территория РФ</td>
-                            <td class="num">25 000</td>
-                            <td class="num">300 000</td>
+                            <td class="name">Право использования системы</td>
+                            <td class="desc">Все модули: объекты, этапы, проверки ресурсов, проверки объёмов, платежи, обращения, дашборд министра, экспорт в Excel. 7 ролей пользователей, мультитенантная архитектура</td>
+                            <td class="num">1 400 000</td>
                         </tr>
                         <tr>
-                            <td class="name">Managed PostgreSQL (БД)</td>
-                            <td class="desc">4 vCPU, 16 GB RAM, 500 GB NVMe. Автоматический failover, point-in-time recovery</td>
-                            <td class="num">22 000</td>
-                            <td class="num">264 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Тестовый сервер (staging)</td>
-                            <td class="desc">4 vCPU, 8 GB RAM. Проверка обновлений перед выкладкой на production</td>
-                            <td class="num">10 000</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Резервное хранилище</td>
-                            <td class="desc">1 TB, георепликация между ЦОДами, ежедневные бэкапы, хранение 90 дней</td>
-                            <td class="num">5 000</td>
-                            <td class="num">60 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">CDN + защита от DDoS</td>
-                            <td class="desc">Фильтрация трафика (DDoS-Guard / Qrator), ускорение отдачи статики</td>
-                            <td class="num">10 000</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Мониторинг и алертинг</td>
-                            <td class="desc">Uptime-мониторинг, метрики CPU/RAM/диск, алерты в Telegram/SMS при сбоях</td>
-                            <td class="num">5 000</td>
-                            <td class="num">60 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">VPN для администрирования</td>
-                            <td class="desc">Защищённый канал доступа к серверам, двухфакторная аутентификация, выделенный IP</td>
-                            <td class="num">10 000</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">SSL-сертификат (OV)</td>
-                            <td class="desc">Organization Validation — подтверждение организации, шифрование данных</td>
-                            <td class="num">—</td>
-                            <td class="num">30 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Доменное имя (.ru)</td>
-                            <td class="desc">Регистрация и ежегодное продление</td>
-                            <td class="num">—</td>
-                            <td class="num">6 000</td>
+                            <td class="name">Обновления, совместимость и патчи безопасности</td>
+                            <td class="desc">Регулярные обновления: совместимость с новыми версиями браузеров, ОС и СУБД, устранение уязвимостей, оптимизация производительности</td>
+                            <td class="num">600 000</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="section-note">
-                    <strong>Примечание:</strong> Все серверы размещаются на территории РФ в сертифицированных ЦОД уровня Tier III в соответствии с требованиями 152-ФЗ о персональных данных. Данные не покидают территорию Российской Федерации.
+                    <strong>Примечание:</strong> Стоимость разработки системы составила 8–10 млн рублей. Подписочная модель позволяет заказчику получать постоянно обновляемый продукт по цене значительно ниже стоимости разработки с нуля.
                 </div>
             </div>
 
-            <!-- Section 2: Support -->
+            <!-- Section 2: Infrastructure / On-premise -->
+            <div class="variant-section">
+                <div class="section-header">
+                    <h2><span class="section-num">2</span> Инфраструктура / обслуживание на площадке</h2>
+                </div>
+
+                <div class="variant-tabs">
+                    <div class="variant-tab active" onclick="switchVariant('a')">
+                        Вариант А: Облако (SaaS)
+                        <small>Размещение на наших серверах</small>
+                    </div>
+                    <div class="variant-tab" onclick="switchVariant('b')">
+                        Вариант Б: On-premise
+                        <small>Размещение на серверах заказчика</small>
+                    </div>
+                </div>
+
+                <div class="variant-content">
+                    <div class="variant-panel active" id="variant-a" data-title="Вариант А: Облако (SaaS)">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Позиция</th>
+                                    <th>Характеристики</th>
+                                    <th class="num">Руб./мес</th>
+                                    <th class="num">Руб./год</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="name">Облачный сервер приложений</td>
+                                    <td class="desc">8 vCPU, 32 GB RAM, 200 GB SSD. ЦОД уровня Tier III, территория РФ</td>
+                                    <td class="num">22 000</td>
+                                    <td class="num">264 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Managed PostgreSQL</td>
+                                    <td class="desc">4 vCPU, 16 GB RAM, 500 GB NVMe. Автоматический failover, point-in-time recovery</td>
+                                    <td class="num">18 000</td>
+                                    <td class="num">216 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Тестовая среда (staging)</td>
+                                    <td class="desc">4 vCPU, 8 GB RAM. Проверка обновлений перед выкладкой в production</td>
+                                    <td class="num">8 000</td>
+                                    <td class="num">96 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Резервное копирование</td>
+                                    <td class="desc">Ежедневные бэкапы, георепликация между ЦОДами, хранение 90 дней</td>
+                                    <td class="num">6 000</td>
+                                    <td class="num">72 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">CDN и защита от DDoS</td>
+                                    <td class="desc">Фильтрация трафика, ускорение отдачи статики, защита от атак</td>
+                                    <td class="num">12 000</td>
+                                    <td class="num">144 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Мониторинг, логирование и алертинг</td>
+                                    <td class="desc">Сбор метрик и логов, дашборды, алерты в Telegram при сбоях</td>
+                                    <td class="num">10 000</td>
+                                    <td class="num">120 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">CI/CD инфраструктура</td>
+                                    <td class="desc">Автоматическая сборка, тестирование и развёртывание обновлений</td>
+                                    <td class="num">8 000</td>
+                                    <td class="num">96 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Сервисы уведомлений</td>
+                                    <td class="desc">Транзакционные email-рассылки, push-уведомления для мобильных устройств</td>
+                                    <td class="num">6 000</td>
+                                    <td class="num">72 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Объектное хранилище (S3)</td>
+                                    <td class="desc">Хранение документов, отчётов, вложений к обращениям</td>
+                                    <td class="num">5 000</td>
+                                    <td class="num">60 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Домен, SSL-сертификат, VPN</td>
+                                    <td class="desc">Домен .ru, OV-сертификат, защищённый VPN-канал для администрирования</td>
+                                    <td class="num">—</td>
+                                    <td class="num">60 000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="section-note">
+                            <strong>Преимущество:</strong> Заказчику не нужно содержать собственные серверы, администратора и инфраструктуру. Всё включено — полностью управляемое решение «под ключ».
+                        </div>
+                    </div>
+
+                    <div class="variant-panel" id="variant-b" data-title="Вариант Б: On-premise">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Позиция</th>
+                                    <th>Обоснование</th>
+                                    <th class="num">Руб./год</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="name">Первичное развёртывание и настройка</td>
+                                    <td class="desc">Установка системы на серверах заказчика, настройка сети, СУБД, SSL, интеграция с инфраструктурой (AD, прокси, файрволы)</td>
+                                    <td class="num">200 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Выезды для обновлений</td>
+                                    <td class="desc">Установка новых версий, тестирование на staging-среде заказчика, откат при проблемах. Командировочные расходы включены</td>
+                                    <td class="num">400 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Удалённый мониторинг и диагностика</td>
+                                    <td class="desc">Мониторинг доступности через VPN, диагностика проблем совместимости с инфраструктурой заказчика, координация с IT-отделом</td>
+                                    <td class="num">360 000</td>
+                                </tr>
+                                <tr>
+                                    <td class="name">Конфигурация и адаптация</td>
+                                    <td class="desc">Настройка системы под специфику серверного окружения заказчика: версии ОС, сетевые политики, системы резервного копирования</td>
+                                    <td class="num">240 000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="section-note">
+                            <strong>Важно:</strong> При выборе on-premise заказчик самостоятельно несёт расходы на серверное оборудование, системное администрирование, электроснабжение и каналы связи (ориентировочно 1 000 000–1 500 000 &#8381;/год дополнительно).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Support -->
             <div class="section">
                 <div class="section-header">
-                    <h2><span class="section-num">2</span> Техническая поддержка и сопровождение</h2>
-                    <div class="section-total">2 040 000 &#8381;<span class="section-percent">40,8%</span></div>
+                    <h2><span class="section-num">3</span> Техническая поддержка и сопровождение</h2>
                 </div>
                 <table>
                     <thead>
@@ -469,46 +861,27 @@
                     <tbody>
                         <tr>
                             <td class="name">Дежурный инженер</td>
-                            <td class="desc">Мониторинг доступности, реагирование на инциденты. SLA: время реакции до 1 часа в рабочее время, до 4 часов в нерабочее. On-call в выходные и праздники</td>
-                            <td class="num">70 000</td>
-                            <td class="num">840 000</td>
+                            <td class="desc">Мониторинг доступности, реагирование на инциденты. SLA: реакция до 1 часа в рабочее время, до 4 часов в нерабочее. On-call в выходные и праздники</td>
+                            <td class="num">50 000</td>
+                            <td class="num">600 000</td>
                         </tr>
                         <tr>
-                            <td class="name">DevOps-инженер</td>
-                            <td class="desc">Обновление серверного ПО и ОС, развёртывание новых версий, настройка CI/CD, масштабирование при росте нагрузки, оптимизация производительности</td>
-                            <td class="num">45 000</td>
-                            <td class="num">540 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Администрирование базы данных</td>
-                            <td class="desc">Оптимизация запросов, управление миграциями, контроль целостности, восстановление из бэкапов при необходимости</td>
-                            <td class="num">20 000</td>
-                            <td class="num">240 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Менеджер проекта</td>
-                            <td class="desc">Координация работ, коммуникация с заказчиком, приём заявок, отчётность, контроль SLA</td>
-                            <td class="num">15 000</td>
-                            <td class="num">180 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Доработка и развитие функционала</td>
-                            <td class="desc">Реализация новых функций и улучшений по запросам заказчика, мелкие доработки интерфейса и логики</td>
-                            <td class="num">20 000</td>
-                            <td class="num">240 000</td>
+                            <td class="name">Администрирование и DevOps</td>
+                            <td class="desc">Обновление серверного ПО, развёртывание новых версий, оптимизация запросов БД, управление миграциями, координация работ, приём заявок</td>
+                            <td class="num">~33 300</td>
+                            <td class="num">400 000</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="section-note">
-                    <strong>SLA (соглашение об уровне сервиса):</strong> доступность системы не менее 99,9% в месяц (допустимый простой — не более 43 минут). При нарушении SLA — перерасчёт стоимости за расчётный период.
+                    <strong>SLA:</strong> доступность системы не менее 99,9% в месяц (допустимый простой — не более 43 минут). При нарушении SLA — перерасчёт стоимости за расчётный период.
                 </div>
             </div>
 
-            <!-- Section 3: Security -->
+            <!-- Section 4: Development -->
             <div class="section">
                 <div class="section-header">
-                    <h2><span class="section-num">3</span> Информационная безопасность</h2>
-                    <div class="section-total">840 000 &#8381;<span class="section-percent">16,8%</span></div>
+                    <h2><span class="section-num">4</span> Развитие и доработка функционала</h2>
                 </div>
                 <table>
                     <thead>
@@ -520,87 +893,14 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="name">Аудит информационной безопасности (2 раза/год)</td>
-                            <td class="desc">Тестирование на проникновение (пентест), сканирование уязвимостей, отчёт с рекомендациями по устранению</td>
-                            <td class="num">300 000</td>
+                            <td class="name">Доработки по запросам заказчика</td>
+                            <td class="desc">Реализация новых функций, отчётов, интеграций по индивидуальным заявкам заказчика</td>
+                            <td class="num">320 000</td>
                         </tr>
                         <tr>
-                            <td class="name">Соответствие 152-ФЗ</td>
-                            <td class="desc">Разработка и актуализация модели угроз, политики обработки ПДн, уведомление Роскомнадзора, ежегодный пересмотр документации</td>
-                            <td class="num">144 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Аттестация ИСПДн</td>
-                            <td class="desc">Аттестация информационной системы персональных данных по требованиям ФСТЭК</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">WAF (Web Application Firewall)</td>
-                            <td class="desc">Защита от SQL-инъекций, XSS, CSRF, брутфорса. Фильтрация вредоносных запросов в реальном времени</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Антивирусная защита серверов (EDR)</td>
-                            <td class="desc">Endpoint Detection &amp; Response на всех серверах, мониторинг подозрительной активности</td>
-                            <td class="num">72 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Шифрованное резервное копирование</td>
-                            <td class="desc">Шифрование бэкапов AES-256, раздельное хранение ключей, тестирование восстановления (1 раз/квартал)</td>
-                            <td class="num">84 000</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="section-note">
-                    <strong>Примечание:</strong> Система обрабатывает персональные данные сотрудников и подрядчиков (ФИО, email, телефон). В соответствии с Федеральным законом №152-ФЗ «О персональных данных» и приказами ФСТЭК России, обеспечивается необходимый уровень защищённости ИСПДн.
-                </div>
-            </div>
-
-            <!-- Section 4: Licenses -->
-            <div class="section">
-                <div class="section-header">
-                    <h2><span class="section-num">4</span> Лицензии и сторонние сервисы</h2>
-                    <div class="section-total">360 000 &#8381;<span class="section-percent">7,2%</span></div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Позиция</th>
-                            <th>Обоснование</th>
-                            <th class="num">Руб./мес</th>
-                            <th class="num">Руб./год</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="name">Email-рассылки (transactional)</td>
-                            <td class="desc">Unisender / SendPulse. Уведомления, отчёты, сброс паролей, еженедельные сводки</td>
-                            <td class="num">5 000</td>
-                            <td class="num">60 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Система отслеживания ошибок</td>
-                            <td class="desc">Sentry — мониторинг ошибок в реальном времени, быстрое реагирование на сбои</td>
-                            <td class="num">8 000</td>
-                            <td class="num">96 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Централизованное логирование</td>
-                            <td class="desc">Grafana Cloud / ELK Stack — сбор и анализ логов для диагностики и аудита действий</td>
-                            <td class="num">7 000</td>
-                            <td class="num">84 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Push-уведомления (PWA)</td>
-                            <td class="desc">Firebase Cloud Messaging / OneSignal — мобильные push для проверяющих и подрядчиков</td>
-                            <td class="num">5 000</td>
-                            <td class="num">60 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Средства совместной работы</td>
-                            <td class="desc">Таск-трекер, система тикетов для обработки запросов заказчика</td>
-                            <td class="num">5 000</td>
-                            <td class="num">60 000</td>
+                            <td class="name">Адаптация под изменения законодательства</td>
+                            <td class="desc">Обновление форм, отчётности и логики системы при изменении нормативных требований</td>
+                            <td class="num">80 000</td>
                         </tr>
                     </tbody>
                 </table>
@@ -609,8 +909,7 @@
             <!-- Section 5: Training -->
             <div class="section">
                 <div class="section-header">
-                    <h2><span class="section-num">5</span> Обучение, внедрение и документация</h2>
-                    <div class="section-total">680 000 &#8381;<span class="section-percent">13,6%</span></div>
+                    <h2><span class="section-num">5</span> Обучение и внедрение</h2>
                 </div>
                 <table>
                     <thead>
@@ -622,34 +921,9 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="name">Обучение пользователей (4 сессии/год)</td>
-                            <td class="desc">Очные и онлайн тренинги по ролям: министр, технадзор, бухгалтер, проверяющие, подрядчики. Включает подготовку материалов и проведение</td>
-                            <td class="num">200 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Линия поддержки пользователей</td>
-                            <td class="desc">Выделенный канал (Telegram / телефон) для консультаций пользователей по работе с системой в рабочее время</td>
-                            <td class="num">180 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Руководство пользователя</td>
-                            <td class="desc">Написание и актуализация при каждом обновлении. Отдельные инструкции для каждой из 7 ролей</td>
-                            <td class="num">120 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Видеоинструкции</td>
-                            <td class="desc">8 видеороликов: обзор системы + по 1 видео на каждую роль. Обновление при изменении интерфейса</td>
-                            <td class="num">100 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Техническая документация</td>
-                            <td class="desc">Описание архитектуры, API-документация, регламенты резервного копирования и восстановления</td>
-                            <td class="num">60 000</td>
-                        </tr>
-                        <tr>
-                            <td class="name">Регламенты ИБ для сотрудников</td>
-                            <td class="desc">Инструкции по безопасной работе с системой, парольная политика, действия при инцидентах</td>
-                            <td class="num">20 000</td>
+                            <td class="name">Обучение и внедрение</td>
+                            <td class="desc">Обучение пользователей по ролям, подготовка документации, сопровождение внедрения системы в рабочие процессы заказчика</td>
+                            <td class="num">400 000</td>
                         </tr>
                     </tbody>
                 </table>
@@ -660,102 +934,297 @@
                 <h2>Итого по смете</h2>
                 <div class="grand-total-rows">
                     <div class="gt-row">
-                        <span class="gt-label">Серверная инфраструктура и хостинг</span>
-                        <span class="gt-value">1 080 000 &#8381;<span class="gt-percent">21,6%</span></span>
+                        <span class="gt-label">Лицензия на ПО</span>
+                        <span class="gt-value">2 000 000 &#8381;<span class="gt-percent">40%</span></span>
                     </div>
                     <div class="gt-row">
-                        <span class="gt-label">Техническая поддержка и сопровождение</span>
-                        <span class="gt-value">2 040 000 &#8381;<span class="gt-percent">40,8%</span></span>
+                        <span class="gt-label">Инфраструктура / on-premise обслуживание</span>
+                        <span class="gt-value">1 200 000 &#8381;<span class="gt-percent">24%</span></span>
                     </div>
                     <div class="gt-row">
-                        <span class="gt-label">Информационная безопасность</span>
-                        <span class="gt-value">840 000 &#8381;<span class="gt-percent">16,8%</span></span>
+                        <span class="gt-label">Техническая поддержка</span>
+                        <span class="gt-value">1 000 000 &#8381;<span class="gt-percent">20%</span></span>
                     </div>
                     <div class="gt-row">
-                        <span class="gt-label">Лицензии и сторонние сервисы</span>
-                        <span class="gt-value">360 000 &#8381;<span class="gt-percent">7,2%</span></span>
+                        <span class="gt-label">Развитие и доработка</span>
+                        <span class="gt-value">400 000 &#8381;<span class="gt-percent">8%</span></span>
                     </div>
                     <div class="gt-row">
-                        <span class="gt-label">Обучение, внедрение и документация</span>
-                        <span class="gt-value">680 000 &#8381;<span class="gt-percent">13,6%</span></span>
+                        <span class="gt-label">Обучение и внедрение</span>
+                        <span class="gt-value">400 000 &#8381;<span class="gt-percent">8%</span></span>
                     </div>
-                </div>
-                <div class="gt-total-row">
-                    <span class="gt-label">ИТОГО В ГОД</span>
-                    <span class="gt-value">5 000 000 &#8381;</span>
+                    <div class="gt-total-row">
+                        <span class="gt-label">Итого в год</span>
+                        <span class="gt-value">5 000 000 &#8381;</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- What's included -->
-            <div class="included">
-                <h2>Что входит в подписку</h2>
-                <div class="included-grid">
-                    <div class="included-item">
-                        <div class="included-icon">&#9881;</div>
-                        <div class="included-text">
-                            <strong>Полнофункциональная система</strong>
-                            7 ролей, все модули: объекты, этапы, проверки ресурсов, проверки объёмов, платежи, обращения, дашборд, экспорт в Excel
-                        </div>
+
+            </div><!-- /model-subscription -->
+
+            <!-- ==================== BOXED MODEL ==================== -->
+            <div class="model-panel" id="model-boxed">
+
+            <!-- Bar chart -->
+            <div class="bar-chart">
+                <h2>Распределение бюджета</h2>
+                <div class="bar-row">
+                    <div class="bar-label">Бессрочная лицензия</div>
+                    <div class="bar-track"><div class="bar-fill c1" style="width: 100%">73%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Развёртывание</div>
+                    <div class="bar-track"><div class="bar-fill c2" style="width: 15%">11%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Техподдержка (12 мес)</div>
+                    <div class="bar-track"><div class="bar-fill c3" style="width: 12.3%">9%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Развитие и доработка</div>
+                    <div class="bar-track"><div class="bar-fill c4" style="width: 5.5%">4%</div></div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-label">Обучение и внедрение</div>
+                    <div class="bar-track"><div class="bar-fill c5" style="width: 5.5%">3%</div></div>
+                </div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="card-value">5</div>
+                    <div class="card-label">Позиций в смете</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value">On-premise</div>
+                    <div class="card-label">Размещение</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value">1 год</div>
+                    <div class="card-label">Гарантийная поддержка</div>
+                </div>
+            </div>
+
+            <!-- Section 1: Perpetual License -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><span class="section-num">1</span> Бессрочная лицензия на программное обеспечение</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Обоснование</th>
+                            <th class="num">Руб.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="name">Бессрочное право использования системы</td>
+                            <td class="desc">Все модули: объекты, этапы, проверки ресурсов, проверки объёмов, платежи, обращения, дашборд министра, экспорт в Excel. 7 ролей пользователей, мультитенантная архитектура. Передача в собственность заказчика</td>
+                            <td class="num">8 000 000</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="section-note">
+                    <strong>Важно:</strong> Лицензия включает версию ПО на момент передачи. Обновления, новый функционал и адаптация под изменения законодательства не входят в стоимость и приобретаются отдельно.
+                </div>
+            </div>
+
+            <!-- Section 2: Deployment -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><span class="section-num">2</span> Развёртывание на серверах заказчика</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Обоснование</th>
+                            <th class="num">Руб.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="name">Первичное развёртывание и настройка</td>
+                            <td class="desc">Установка системы на серверах заказчика, настройка сети, СУБД, SSL, интеграция с инфраструктурой (AD, прокси, файрволы)</td>
+                            <td class="num">200 000</td>
+                        </tr>
+                        <tr>
+                            <td class="name">Выезды для обновлений</td>
+                            <td class="desc">Установка новых версий, тестирование на staging-среде заказчика, откат при проблемах. Командировочные расходы включены</td>
+                            <td class="num">400 000</td>
+                        </tr>
+                        <tr>
+                            <td class="name">Удалённый мониторинг и диагностика</td>
+                            <td class="desc">Мониторинг доступности через VPN, диагностика проблем совместимости с инфраструктурой заказчика, координация с IT-отделом</td>
+                            <td class="num">360 000</td>
+                        </tr>
+                        <tr>
+                            <td class="name">Конфигурация и адаптация</td>
+                            <td class="desc">Настройка системы под специфику серверного окружения заказчика: версии ОС, сетевые политики, системы резервного копирования</td>
+                            <td class="num">240 000</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="section-note">
+                    <strong>Важно:</strong> Заказчик самостоятельно несёт расходы на серверное оборудование, системное администрирование, электроснабжение и каналы связи.
+                </div>
+            </div>
+
+            <!-- Section 3: Support 12 months -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><span class="section-num">3</span> Техническая поддержка и сопровождение (12 месяцев)</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Объём и обоснование</th>
+                            <th class="num">Руб./мес</th>
+                            <th class="num">Руб./12 мес</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="name">Дежурный инженер</td>
+                            <td class="desc">Мониторинг доступности, реагирование на инциденты. SLA: реакция до 1 часа в рабочее время, до 4 часов в нерабочее. On-call в выходные и праздники</td>
+                            <td class="num">50 000</td>
+                            <td class="num">600 000</td>
+                        </tr>
+                        <tr>
+                            <td class="name">Администрирование и DevOps</td>
+                            <td class="desc">Обновление серверного ПО, развёртывание новых версий, оптимизация запросов БД, управление миграциями, координация работ, приём заявок</td>
+                            <td class="num">~33 300</td>
+                            <td class="num">400 000</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="section-note">
+                    <strong>SLA:</strong> доступность системы не менее 99,9% в месяц (допустимый простой — не более 43 минут). Гарантийная поддержка действует 12 месяцев с момента передачи. Продление — по отдельному договору.
+                </div>
+            </div>
+
+            <!-- Section 4: Development (12 months) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><span class="section-num">4</span> Развитие и доработка функционала (12 месяцев)</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Обоснование</th>
+                            <th class="num">Руб.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="name">Доработки по запросам заказчика</td>
+                            <td class="desc">Реализация новых функций, отчётов, интеграций по индивидуальным заявкам заказчика</td>
+                            <td class="num">320 000</td>
+                        </tr>
+                        <tr>
+                            <td class="name">Адаптация под изменения законодательства</td>
+                            <td class="desc">Обновление форм, отчётности и логики системы при изменении нормативных требований</td>
+                            <td class="num">80 000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Section 5: Training -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><span class="section-num">5</span> Обучение и внедрение</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Обоснование</th>
+                            <th class="num">Руб.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="name">Обучение и внедрение</td>
+                            <td class="desc">Обучение пользователей по ролям, подготовка документации, сопровождение внедрения системы в рабочие процессы заказчика</td>
+                            <td class="num">400 000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Grand total boxed -->
+            <div class="grand-total">
+                <h2>Итого по смете</h2>
+                <div class="grand-total-rows">
+                    <div class="gt-row">
+                        <span class="gt-label">Бессрочная лицензия на ПО</span>
+                        <span class="gt-value">8 000 000 &#8381;<span class="gt-percent">73%</span></span>
                     </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#9200;</div>
-                        <div class="included-text">
-                            <strong>Доступность 99,9% (SLA)</strong>
-                            Время реакции на инциденты — до 1 часа, on-call в выходные и праздники
-                        </div>
+                    <div class="gt-row">
+                        <span class="gt-label">Развёртывание на серверах заказчика</span>
+                        <span class="gt-value">1 200 000 &#8381;<span class="gt-percent">11%</span></span>
                     </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#128190;</div>
-                        <div class="included-text">
-                            <strong>Ежедневные бэкапы</strong>
-                            Резервное копирование с шифрованием, хранение 90 дней, георепликация
-                        </div>
+                    <div class="gt-row">
+                        <span class="gt-label">Техническая поддержка (12 мес)</span>
+                        <span class="gt-value">1 000 000 &#8381;<span class="gt-percent">9%</span></span>
                     </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#128274;</div>
-                        <div class="included-text">
-                            <strong>Соответствие 152-ФЗ</strong>
-                            Аттестация ИСПДн, 2 аудита безопасности в год, WAF, антивирус
-                        </div>
+                    <div class="gt-row">
+                        <span class="gt-label">Развитие и доработка (12 мес)</span>
+                        <span class="gt-value">400 000 &#8381;<span class="gt-percent">4%</span></span>
                     </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#128241;</div>
-                        <div class="included-text">
-                            <strong>PWA для мобильных устройств</strong>
-                            Работа с телефона, офлайн-режим для проверяющих на объектах
-                        </div>
+                    <div class="gt-row">
+                        <span class="gt-label">Обучение и внедрение</span>
+                        <span class="gt-value">400 000 &#8381;<span class="gt-percent">3%</span></span>
                     </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#127891;</div>
-                        <div class="included-text">
-                            <strong>Обучение и поддержка</strong>
-                            4 тренинга в год, видеоинструкции, выделенная линия консультаций
-                        </div>
-                    </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#128200;</div>
-                        <div class="included-text">
-                            <strong>Аналитика и отчёты</strong>
-                            Дашборд министра, экспорт в Excel, графики, email/push-уведомления
-                        </div>
-                    </div>
-                    <div class="included-item">
-                        <div class="included-icon">&#128196;</div>
-                        <div class="included-text">
-                            <strong>Полная документация</strong>
-                            Руководства по 7 ролям, техническая документация, регламенты ИБ
-                        </div>
+                    <div class="gt-total-row">
+                        <span class="gt-label">Итого (разово)</span>
+                        <span class="gt-value">11 000 000 &#8381;</span>
                     </div>
                 </div>
             </div>
+
+            </div><!-- /model-boxed -->
 
         </div>
 
         <div class="footer">
-            <p>Цены указаны без НДС. Коммерческое предложение действительно в течение 30 календарных дней с даты составления.</p>
-            <p>Все серверы размещаются на территории РФ. Обработка персональных данных — в соответствии с 152-ФЗ.</p>
+            <p>Цены указаны без НДС. Документ носит информационный характер и не является публичной офертой.</p>
         </div>
 
     </div>
+
+    <script>
+        function switchVariant(variant) {
+            document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.variant-panel').forEach(p => p.classList.remove('active'));
+
+            if (variant === 'a') {
+                document.querySelectorAll('.variant-tab')[0].classList.add('active');
+                document.getElementById('variant-a').classList.add('active');
+            } else {
+                document.querySelectorAll('.variant-tab')[1].classList.add('active');
+                document.getElementById('variant-b').classList.add('active');
+            }
+        }
+
+        function switchModel(model) {
+            document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.model-panel').forEach(p => p.classList.remove('active'));
+
+            if (model === 'subscription') {
+                document.querySelectorAll('.model-tab')[0].classList.add('active');
+                document.getElementById('model-subscription').classList.add('active');
+            } else {
+                document.querySelectorAll('.model-tab')[1].classList.add('active');
+                document.getElementById('model-boxed').classList.add('active');
+            }
+        }
+    </script>
 </body>
 </html>
